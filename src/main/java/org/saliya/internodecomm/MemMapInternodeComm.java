@@ -13,7 +13,6 @@ public class MemMapInternodeComm {
         Intracomm worldComm = MPI.COMM_WORLD;
         int worldRank = worldComm.getRank();
         int worldSize = worldComm.getSize();
-        System.out.println("Hello from " + worldRank + " of " + worldSize);
 
         int nodeCount = Integer.parseInt(args[0]);
         assert worldSize % nodeCount == 0;
