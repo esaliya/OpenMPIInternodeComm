@@ -30,7 +30,7 @@ public class MemMapInternodeComm {
         int cgProcCountPerNode = worldNodeLocalRank < r*(q+1) ? q+1 : q;
         boolean cgLead = worldNodeLocalRank % cgProcCountPerNode == 0;
 
-        Intracomm cgComm = worldComm.split(cgLead ? worldNodeLocalRank : -1, worldRank);
+        Intracomm cgComm = worldComm.split(cgLead ? worldNodeLocalRank : worldSize+1, worldRank);
 
         // Testing
         if (cgLead) {
