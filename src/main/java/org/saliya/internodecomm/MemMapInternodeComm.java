@@ -33,13 +33,15 @@ public class MemMapInternodeComm {
         Intracomm cgComm = worldComm.split(cgLead ? worldNodeLocalRank : worldSize+1, worldRank);
 
         // Testing
-        if (cgLead) {
+        System.out.println("WorldRank: " + worldRank + " CGRank: " + cgComm.getRank());
+
+        /*if (cgLead) {
             IntBuffer buff = MPI.newIntBuffer(1);
             buff.position(0);
             buff.put(cgComm.getRank());
             cgComm.allReduce(buff, 1, MPI.INT, MPI.MAX);
             System.out.println("WorldRank: " + worldRank + " CGRank: " + cgComm.getRank() + " MaxCGRank: " + buff.get(0));
-        }
+        }*/
 
 
         MPI.Finalize();
