@@ -34,7 +34,6 @@ public class MemMapInternodeComm {
         Intracomm cgComm = worldComm.split(cgLead ? 0 : 1, worldRank);
 
         // Testing
-//        System.out.println("WorldRank: " + worldRank + " CGRank: " + cgComm.getRank());
 
         if (cgLead) {
             IntBuffer buff = MPI.newIntBuffer(1);
