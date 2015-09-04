@@ -20,11 +20,10 @@ public class MemMapTwoProc {
 
         int size = Integer.parseInt(args[0]);
         String file = "/scratch/tmp.bin";
-        boolean isWriter = worldProcRank == 0;
         try(FileChannel fc = FileChannel.open(Paths.get(file),
                                               StandardOpenOption.CREATE, StandardOpenOption.WRITE , StandardOpenOption.READ)) {
             double[] randomValues = new double[size];
-            if (isWriter){
+            if (worldProcRank == 0){
                 IntStream.range(0, size).parallel().forEach(
                     i -> randomValues[i] = Math.random());
             }
@@ -37,11 +36,11 @@ public class MemMapTwoProc {
             int myOffset = worldProcRank < r ? worldProcRank*(q+1) : worldProcRank*q + r;
             int myExtent = mySize*Double.BYTES;
             int fullExtent = size*Double.BYTES;
+
             MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, myOffset, myExtent);
             MappedByteBuffer readMbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, fullExtent);
-            if (isWriter){
-                mbb.asDoubleBuffer().put(randomValues,myOffset, mySize);
-            }
+
+            mbb.asDoubleBuffer().put(randomValues,myOffset, mySize);
             worldProcComm.barrier();
             double[] readValues = new double[size];
             readMbb.position(0);
