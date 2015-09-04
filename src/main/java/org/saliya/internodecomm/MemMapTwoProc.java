@@ -47,7 +47,10 @@ public class MemMapTwoProc {
             readMbb.position(0);
             readMbb.asDoubleBuffer().get(readValues);*/
 
+
+            // This fails too. So interesting. Next try with some screwing around and also with OpenHFT Bytes
             MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, fullExtent);
+
 
             mbb.position(myOffset);
             mbb.asDoubleBuffer().put(randomValues,myOffset, mySize);
