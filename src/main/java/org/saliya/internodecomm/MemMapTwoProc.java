@@ -18,7 +18,7 @@ public class MemMapTwoProc {
         int worldProcRank = worldProcComm.getRank();
         int worldProcCount = worldProcComm.getSize();
 
-        int size = 100;
+        int size = Integer.parseInt(args[0]);
         String file = "/scratch/tmp.bin";
         boolean isWriter = worldProcRank == 0;
         try(FileChannel fc = FileChannel.open(Paths.get(file),
