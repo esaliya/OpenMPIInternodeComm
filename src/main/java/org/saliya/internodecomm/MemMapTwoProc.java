@@ -37,14 +37,24 @@ public class MemMapTwoProc {
             int myExtent = mySize*Double.BYTES;
             int fullExtent = size*Double.BYTES;
 
-            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, myOffset, myExtent);
+            // OK this fails  - two views
+         /*   MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, myOffset, myExtent);
             MappedByteBuffer readMbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, fullExtent);
 
             mbb.asDoubleBuffer().put(randomValues,myOffset, mySize);
             worldProcComm.barrier();
             double[] readValues = new double[size];
             readMbb.position(0);
-            readMbb.asDoubleBuffer().get(readValues);
+            readMbb.asDoubleBuffer().get(readValues);*/
+
+            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, fullExtent);
+
+            mbb.position(myOffset);
+            mbb.asDoubleBuffer().put(randomValues,myOffset, mySize);
+            worldProcComm.barrier();
+            double[] readValues = new double[size];
+            mbb.position(0);
+            mbb.asDoubleBuffer().get(readValues);
 
             for (int i = 0; i < size; ++i){
                 if (randomValues[i] != readValues[i]){
