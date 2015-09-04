@@ -31,15 +31,21 @@ public class MemMapTwoProc {
             worldProcComm.bcast(randomValues, size, MPI.DOUBLE, 0);
             // Alright, everyone knows what the writer will write by now.
 
-            int extent = size*Double.BYTES;
-            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, extent);
+            int q = size / worldProcCount;
+            int r = size % worldProcCount;
+            int mySize = worldProcRank < r ? q+1 : q;
+            int myOffset = worldProcRank < r ? worldProcRank*(q+1) : worldProcRank*q + r;
+            int myExtent = mySize*Double.BYTES;
+            int fullExtent = size*Double.BYTES;
+            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, myOffset, myExtent);
+            MappedByteBuffer readMbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, fullExtent);
             if (isWriter){
-                mbb.asDoubleBuffer().put(randomValues);
+                mbb.asDoubleBuffer().put(randomValues,myOffset, mySize);
             }
             worldProcComm.barrier();
             double[] readValues = new double[size];
-            mbb.position(0);
-            mbb.asDoubleBuffer().get(readValues);
+            readMbb.position(0);
+            readMbb.asDoubleBuffer().get(readValues);
 
             for (int i = 0; i < size; ++i){
                 if (randomValues[i] != readValues[i]){
