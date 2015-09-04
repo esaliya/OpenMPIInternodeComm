@@ -22,7 +22,7 @@ public class MemMapTwoProc {
         String file = "/scratch/tmp.bin";
         boolean isWriter = worldProcRank == 0;
         try(FileChannel fc = FileChannel.open(Paths.get(file),
-                                              StandardOpenOption.CREATE, isWriter ? StandardOpenOption.WRITE : StandardOpenOption.READ)) {
+                                              StandardOpenOption.CREATE, StandardOpenOption.WRITE , StandardOpenOption.READ)) {
             double[] randomValues = new double[size];
             if (isWriter){
                 IntStream.range(0, size).parallel().forEach(
@@ -32,7 +32,7 @@ public class MemMapTwoProc {
             // Alright, everyone knows what the writer will write by now.
 
             int extent = size*Double.BYTES;
-            MappedByteBuffer mbb = fc.map(isWriter ? FileChannel.MapMode.READ_ONLY : FileChannel.MapMode.READ_WRITE, 0, extent);
+            MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, 0, extent);
             if (isWriter){
                 mbb.asDoubleBuffer().put(randomValues);
             }
