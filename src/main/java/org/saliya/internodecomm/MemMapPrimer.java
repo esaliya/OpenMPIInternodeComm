@@ -5,6 +5,7 @@ import mpi.MPI;
 import mpi.MPIException;
 
 import java.io.IOException;
+import java.nio.DoubleBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
@@ -19,10 +20,20 @@ public class MemMapPrimer {
         int worldRank = worldComm.getRank();
         int worldSize = worldComm.getSize();
 
+        testOne(worldComm, worldRank, worldSize);
+
+
+
+        MPI.Finalize();
+    }
+
+    private static void testOne(
+        Intracomm worldComm, int worldRank, int worldSize) throws MPIException {
         try (FileChannel fc = FileChannel.open(Paths.get("test.bin"), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ)) {
             int size = 4; // size in bytes
             long pos = size*worldRank;
-            MappedByteBuffer mappedBytes = fc.map(FileChannel.MapMode.READ_WRITE, pos, size);
+            MappedByteBuffer
+                mappedBytes = fc.map(FileChannel.MapMode.READ_WRITE, pos, size);
             ShortBuffer sb = mappedBytes.asShortBuffer();
             int numShorts = size / Short.BYTES;
             sb.position(0);
@@ -44,6 +55,5 @@ public class MemMapPrimer {
         catch (IOException e) {
             e.printStackTrace();
         }
-        MPI.Finalize();
     }
 }

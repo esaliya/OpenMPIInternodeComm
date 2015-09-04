@@ -10,19 +10,22 @@ import java.nio.IntBuffer;
 public class MemMapInternodeComm {
     public static void main(String[] args) throws MPIException {
         args = MPI.Init(args);
+
+        int nodeCount = Integer.parseInt(args[0]);
+        int mmapsPerNode = Integer.parseInt(args[1]);
+
+
         Intracomm worldComm = MPI.COMM_WORLD;
         int worldRank = worldComm.getRank();
         int worldSize = worldComm.getSize();
 
-        int nodeCount = Integer.parseInt(args[0]);
         assert worldSize % nodeCount == 0;
         int worldProcsPerNode = worldSize / nodeCount;
         // Number of communicating groups per node
-        int cgPerNode = Integer.parseInt(args[1]);
 
         int worldNodeLocalRank = worldRank % worldProcsPerNode;
-        int q = worldProcsPerNode / cgPerNode;
-        int r = worldProcsPerNode % cgPerNode;
+        int q = worldProcsPerNode / mmapsPerNode;
+        int r = worldProcsPerNode % mmapsPerNode;
 
         // Communicating group
         int cgId = worldNodeLocalRank < r*(q+1) ? worldNodeLocalRank/(q+1) : (worldNodeLocalRank-r)/q;
