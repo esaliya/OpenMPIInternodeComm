@@ -134,18 +134,32 @@ public class MemMapInternodeComm {
 
         if (worldProcsCount > 1) {
             mergePartials(partials, targetDimension, mmapXWriteBytes);
+            // Check if you get points local to you as is if read by mmapXWriteBytes - This MUST work unless some indexing error with points
+            for (int i = procRowStartOffset; i < procRowStartOffset+procRowCount; ++i){
+                for (int j = 0; j < targetDimension; ++j){
+                    double writtenValue = mmapXWriteBytes.readDouble((i-procRowStartOffset)*targetDimension*Double.BYTES + j*Double.BYTES);
+                    double originalValue = preX[i][j];
+                    if (writtenValue != originalValue){
+                        System.out.println(
+                            "Rank " + worldProcRank + " testloopNeg1-(" + i + "," + j + ") originalValue " + originalValue + " writtenValue " + writtenValue);
+                    }
+                }
+            }
+
+
             // Check if merging works
-            int mmapLeadRowOffset = procRowRanges[mmapLeadWorldRank].getStartIndex();
+            /*int mmapLeadRowOffset = procRowRanges[mmapLeadWorldRank].getStartIndex();
             for (int i = 0; i < mmapProcsRowCount; ++i){
                 for (int j = 0; j < targetDimension; ++j){
                     double mergedValue = mmapXReadBytes.readDouble(i*targetDimension+j);
                     double originalValue = preX[mmapLeadRowOffset+i][j];
                     if (mergedValue != originalValue){
                         System.out.println(
-                            "Rank " + worldProcRank + " testloopo-(" + i + "," + j + ") originalValue " + originalValue + " mergedValue " + mergedValue);
+                            "Rank " + worldProcRank + " testloop0-(" + i + "," + j + ") originalValue " + originalValue + " mergedValue " + mergedValue);
                     }
                 }
-            }
+            }*/
+
             return null;
             /*if (isMmapLead) {
                 partialXAllGather();
