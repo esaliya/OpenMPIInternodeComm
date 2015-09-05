@@ -17,7 +17,8 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 public class MemMapTwoProc {
-    public static void main(String[] args) throws MPIException {
+    public static void main(String[] args)
+        throws MPIException, InterruptedException {
         args = MPI.Init(args);
         Intracomm worldProcComm = MPI.COMM_WORLD;
         int worldProcRank = worldProcComm.getRank();
@@ -49,6 +50,7 @@ public class MemMapTwoProc {
                 writeBytes.position(i*Double.BYTES);
                 writeBytes.writeDouble(randomValues[i+myOffset]);
             }
+            Thread.sleep(10);
 
             double[] readValues = new double[size];
             for (int i = 0; i < size; ++i){

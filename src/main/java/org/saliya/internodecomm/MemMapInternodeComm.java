@@ -163,6 +163,7 @@ public class MemMapInternodeComm {
             }
 
 
+            // NO this doesn't work. Putting a thread sleep works means that we have a delay in write propagation. Shit!
             Thread.sleep(5);
             // Check if what all in your mem group wrote can be read through your reader
             int mmapLeadRowOffset = procRowRanges[mmapLeadWorldRank].getStartIndex();
