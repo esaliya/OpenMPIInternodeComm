@@ -151,7 +151,7 @@ public class MemMapInternodeComm {
             for (int i = procRowStartOffset; i < procRowStartOffset+procRowCount; ++i){
                 for (int j = 0; j < targetDimension; ++j) {
                     double originalValue = preX[i][j];
-                    double writtenValueAsReadByReader = mmapXReadBytes.readDouble((offset+i)*targetDimension*Double.BYTES + j*Double.BYTES);
+                    double writtenValueAsReadByReader = mmapXReadBytes.readDouble((offset+(i-procRowStartOffset))*targetDimension*Double.BYTES + j*Double.BYTES);
                     System.out.println(
                         "Rank " + worldProcRank + " testloopNeg1-(" + i + "," + j + ") originalValue " + originalValue + " writtenValueAsReadByReader " + writtenValueAsReadByReader);
                 }
