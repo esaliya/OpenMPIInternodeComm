@@ -24,7 +24,7 @@ public class MemMapTwoProc {
         int worldProcCount = worldProcComm.getSize();
 
         int size = Integer.parseInt(args[0]);
-        String file = "/scratch/tmp.bin";
+        String file = "/dev/shm/tmp.bin";
         try(FileChannel fc = FileChannel.open(Paths.get(file),
                                               StandardOpenOption.CREATE, StandardOpenOption.WRITE , StandardOpenOption.READ)) {
             double[] randomValues = new double[size];
