@@ -163,6 +163,7 @@ public class MemMapInternodeComm {
             }
 
 
+            Thread.sleep(2);
             // Check if what all in your mem group wrote can be read through your reader
             int mmapLeadRowOffset = procRowRanges[mmapLeadWorldRank].getStartIndex();
             for (int i = 0; i < mmapProcsRowCount; ++i){
