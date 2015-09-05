@@ -163,18 +163,18 @@ public class MemMapInternodeComm {
             }
 
 
-            // Check if merging works
-            /*int mmapLeadRowOffset = procRowRanges[mmapLeadWorldRank].getStartIndex();
+            // Check if what all in your mem group wrote can be read through your reader
+            int mmapLeadRowOffset = procRowRanges[mmapLeadWorldRank].getStartIndex();
             for (int i = 0; i < mmapProcsRowCount; ++i){
                 for (int j = 0; j < targetDimension; ++j){
-                    double mergedValue = mmapXReadBytes.readDouble(i*targetDimension+j);
+                    double writtenValue = mmapXReadBytes.readDouble(i*targetDimension*Double.BYTES+j*Double.BYTES);
                     double originalValue = preX[mmapLeadRowOffset+i][j];
-                    if (mergedValue != originalValue){
+                    if (writtenValue != originalValue){
                         System.out.println(
-                            "Rank " + worldProcRank + " testloop0-(" + i + "," + j + ") originalValue " + originalValue + " mergedValue " + mergedValue);
+                            "Rank " + worldProcRank + " testloop0-(" + i + "," + j + ") originalValue " + originalValue + " writtenValue " + writtenValue);
                     }
                 }
-            }*/
+            }
 
             return null;
             /*if (isMmapLead) {
