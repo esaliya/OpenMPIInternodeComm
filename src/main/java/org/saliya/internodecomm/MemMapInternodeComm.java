@@ -137,12 +137,23 @@ public class MemMapInternodeComm {
             // Check if you get points local to you as is if read by mmapXWriteBytes - This MUST work unless some indexing error with points
             for (int i = procRowStartOffset; i < procRowStartOffset+procRowCount; ++i){
                 for (int j = 0; j < targetDimension; ++j){
-                    double writtenValue = mmapXWriteBytes.readDouble((i-procRowStartOffset)*targetDimension*Double.BYTES + j*Double.BYTES);
                     double originalValue = preX[i][j];
+                    double writtenValue = mmapXWriteBytes.readDouble((i-procRowStartOffset)*targetDimension*Double.BYTES + j*Double.BYTES);
                     if (writtenValue != originalValue){
                         System.out.println(
-                            "Rank " + worldProcRank + " testloopNeg1-(" + i + "," + j + ") originalValue " + originalValue + " writtenValue " + writtenValue);
+                            "Rank " + worldProcRank + " testloopNeg2-(" + i + "," + j + ") originalValue " + originalValue + " writtenValue " + writtenValue);
                     }
+                }
+            }
+
+            // Check if what you wrote can be read through your reader
+            int offset = procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex();
+            for (int i = procRowStartOffset; i < procRowStartOffset+procRowCount; ++i){
+                for (int j = 0; j < targetDimension; ++j) {
+                    double originalValue = preX[i][j];
+                    double writtenValueAsReadByReader = mmapXReadBytes.readDouble((offset+i)*targetDimension*Double.BYTES + j*Double.BYTES);
+                    System.out.println(
+                        "Rank " + worldProcRank + " testloopNeg1-(" + i + "," + j + ") originalValue " + originalValue + " writtenValueAsReadByReader " + writtenValueAsReadByReader);
                 }
             }
 
