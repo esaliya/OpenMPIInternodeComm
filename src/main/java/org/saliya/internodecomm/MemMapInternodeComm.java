@@ -88,7 +88,7 @@ public class MemMapInternodeComm {
 
     public static Bytes mmapXReadBytes;
     public static ByteBuffer mmapXReadByteBuffer;
-    public static Bytes partialXWriteBytes;
+    public static Bytes mmapXWriteBytes;
     public static Bytes fullXBytes;
     public static ByteBuffer fullXByteBuffer;
 
@@ -133,8 +133,21 @@ public class MemMapInternodeComm {
         }
 
         if (worldProcsCount > 1) {
-            mergePartials(partials, targetDimension, partialXWriteBytes);
-            if (isMmapLead) {
+            mergePartials(partials, targetDimension, mmapXWriteBytes);
+            // Check if merging works
+            int mmapLeadRowOffset = procRowRanges[mmapLeadWorldRank].getStartIndex();
+            for (int i = 0; i < mmapProcsRowCount; ++i){
+                for (int j = 0; j < targetDimension; ++j){
+                    double mergedValue = mmapXReadBytes.readDouble(i*targetDimension+j);
+                    double originalValue = preX[mmapLeadRowOffset+i][j];
+                    if (mergedValue != originalValue){
+                        System.out.println(
+                            "Rank " + worldProcRank + " testloopo-(" + i + "," + j + ") originalValue " + originalValue + " mergedValue " + mergedValue);
+                    }
+                }
+            }
+            return null;
+            /*if (isMmapLead) {
                 partialXAllGather();
             }
             // Each process in a memory group waits here.
@@ -151,9 +164,9 @@ public class MemMapInternodeComm {
                 // TODO - a test to see if we assume writes are all good then this read should be good
                 // because it's reading the buffer returned by MPI allgather.
                 // OK it's a FAILURE, so writing may not be good.
-                /*result = extractPoints(
+                *//*result = extractPoints(
                     fullXByteBuffer, globalColCount,
-                    targetDimension);*/
+                    targetDimension);*//*
                 for (int i = 0; i < result.length; ++i) {
                     for (int j = 0; j < targetDimension; ++j) {
                         if (preX[i][j] != result[i][j]) {
@@ -163,7 +176,7 @@ public class MemMapInternodeComm {
                     }
                 }
             }
-            return result;
+            return result;*/
         }else {
             double [][] result = new double[globalColCount][targetDimension];
             mergePartials(partials, targetDimension, result);
@@ -332,7 +345,7 @@ public class MemMapInternodeComm {
             mmapXReadByteBuffer = MPI.newByteBuffer(mmapXReadByteExtent);
 
             mmapXReadBytes.position(0);
-            partialXWriteBytes = mmapXReadBytes.slice(mmapXWriteByteOffset, mmapXWriteByteExtent);
+            mmapXWriteBytes = mmapXReadBytes.slice(mmapXWriteByteOffset, mmapXWriteByteExtent);
 
             fullXBytes = ByteBufferBytes.wrap(fullXFc.map(FileChannel.MapMode.READ_WRITE,
                                                           fullXByteOffset, fullXByteExtent));
@@ -403,10 +416,9 @@ public class MemMapInternodeComm {
         mmapXReadBytes.read(mmapXReadByteBuffer);
         fullXByteBuffer.position(0);
         cgProcComm.allGatherv(mmapXReadByteBuffer,
-                              cgProcsMmapXByteExtents[cgProcRank],
-                              MPI.BYTE, fullXByteBuffer,
-                              cgProcsMmapXByteExtents, cgProcsMmapXDisplas,
-                              MPI.BYTE);
+                              cgProcsMmapXByteExtents[cgProcRank], MPI.BYTE,
+                              fullXByteBuffer, cgProcsMmapXByteExtents,
+                              cgProcsMmapXDisplas, MPI.BYTE);
         fullXBytes.position(0);
         fullXByteBuffer.position(0);
         fullXBytes.write(fullXByteBuffer);
