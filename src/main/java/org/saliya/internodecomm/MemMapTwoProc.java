@@ -4,6 +4,8 @@ import mpi.Comm;
 import mpi.Intracomm;
 import mpi.MPI;
 import mpi.MPIException;
+import net.openhft.lang.io.ByteBufferBytes;
+import net.openhft.lang.io.Bytes;
 
 import java.io.IOException;
 import java.nio.DoubleBuffer;
@@ -37,8 +39,28 @@ public class MemMapTwoProc {
             int r = size % worldProcCount;
             int mySize = worldProcRank < r ? q+1 : q;
             int myOffset = worldProcRank < r ? worldProcRank*(q+1) : worldProcRank*q + r;
+            int myOffsetInBytes = myOffset*Double.BYTES;
             int myExtent = mySize*Double.BYTES;
             int fullExtent = size*Double.BYTES;
+
+            Bytes fullBytes = ByteBufferBytes.wrap(fc.map(FileChannel.MapMode.READ_WRITE,0, fullExtent));
+            Bytes writeBytes = fullBytes.slice(myOffsetInBytes, myExtent);
+            for (int i = 0; i < mySize; ++i){
+                writeBytes.position(i*Double.BYTES);
+                writeBytes.writeDouble(randomValues[i+myOffset]);
+            }
+
+            double[] readValues = new double[size];
+            for (int i = 0; i < size; ++i){
+                readValues[i] = fullBytes.readDouble(i*Double.BYTES);
+            }
+
+            for (int i = 0; i < size; ++i){
+                if (randomValues[i] != readValues[i]){
+                    System.out.println("Inconsistent rank " + worldProcRank + " " + i + " expected " + randomValues[i] + " found " + readValues[i]);
+                }
+            }
+
 
             // OK this fails  - two views
          /*   MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_WRITE, myOffset, myExtent);
@@ -66,23 +88,9 @@ public class MemMapTwoProc {
                 }
             }*/
 
-            double[] partial = new double[mySize];
-            for (int z = myOffset; z < myOffset+mySize; ++z){
-                partial[z-myOffset] = randomValues[z];
-            }
-
-            DoubleBuffer partialBuffer = MPI.newDoubleBuffer(mySize);
-            partialBuffer.put(partial);
-            DoubleBuffer fullBuffer = MPI.newDoubleBuffer(size);
-            allGather(partialBuffer, 1, worldProcCount, mySize, worldProcRank, worldProcComm, fullBuffer);
-            double[] readValues = new double[size];
-            fullBuffer.position(0);
-            fullBuffer.get(readValues);
-            for (int i = 0; i < size; ++i){
-                if (randomValues[i] != readValues[i]){
-                    System.out.println("Inconsistent rank " + worldProcRank + " " + i + " expected " + randomValues[i] + " found " + readValues[i]);
-                }
-            }
+            /*testIfDivisionOfPointsIsCorrect(worldProcComm, worldProcRank,
+                                            worldProcCount, size, randomValues,
+                                            mySize, myOffset);*/
 
         }
         catch (IOException e) {
@@ -91,6 +99,29 @@ public class MemMapTwoProc {
 
 
         MPI.Finalize();
+    }
+
+    private static void testIfDivisionOfPointsIsCorrect(
+        Intracomm worldProcComm, int worldProcRank, int worldProcCount,
+        int size, double[] randomValues, int mySize, int myOffset)
+        throws MPIException {
+        double[] partial = new double[mySize];
+        for (int z = myOffset; z < myOffset+mySize; ++z){
+            partial[z-myOffset] = randomValues[z];
+        }
+
+        DoubleBuffer partialBuffer = MPI.newDoubleBuffer(mySize);
+        partialBuffer.put(partial);
+        DoubleBuffer fullBuffer = MPI.newDoubleBuffer(size);
+        allGather(partialBuffer, 1, worldProcCount, mySize, worldProcRank, worldProcComm, fullBuffer);
+        double[] readValues = new double[size];
+        fullBuffer.position(0);
+        fullBuffer.get(readValues);
+        for (int i = 0; i < size; ++i){
+            if (randomValues[i] != readValues[i]){
+                System.out.println("Inconsistent rank " + worldProcRank + " " + i + " expected " + randomValues[i] + " found " + readValues[i]);
+            }
+        }
     }
 
     public static DoubleBuffer allGather(
