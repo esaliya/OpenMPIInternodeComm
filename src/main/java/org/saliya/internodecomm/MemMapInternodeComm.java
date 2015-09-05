@@ -95,7 +95,7 @@ public class MemMapInternodeComm {
 
 
     public static void main(String[] args)
-        throws MPIException, InterruptedException {
+        throws MPIException, InterruptedException, IOException {
         args = MPI.Init(args);
 
         nodeCount = Integer.parseInt(args[0]);
@@ -107,6 +107,7 @@ public class MemMapInternodeComm {
         int targetDimension = Integer.parseInt(args[5]);
 
         setupParallelism();
+        setParallelDecomposition(numberDataPoints, targetDimension);
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
         double[][] X = calculateNothing(preX, targetDimension);
