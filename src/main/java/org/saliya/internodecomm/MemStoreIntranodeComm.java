@@ -130,16 +130,18 @@ public class MemStoreIntranodeComm {
                                                    FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent)) {
 
             //            DirectBytes bytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
-            mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
+            mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset,
+                                            mmapXWriteByteExtent);
             //            bytes.positionAndSize(0L, mmapXWriteByteExtent);
             mmapXWriteBytes.positionAndSize(0L, mmapXWriteByteExtent);
 
-        }
+
             int count = 0;
-            for(int i = procRowStartOffset;i<procRowCount+procRowStartOffset;++i) {
+            for (int i = procRowStartOffset;
+                 i < procRowCount + procRowStartOffset; ++i) {
                 for (int j = 0; j < targetDimension; ++j) {
                     double d = preX[i][j];
-//                    bytes.writeDouble(d);
+                    //                    bytes.writeDouble(d);
                     mmapXWriteBytes.writeDouble(d);
                     ++count;
                 }
@@ -150,6 +152,7 @@ public class MemStoreIntranodeComm {
                                                   == mmapXWriteByteExtent));
 
             System.out.println("Came here");
+        }
         /*}*/
 
         /*double[][] X = calculateNothing(preX, targetDimension);*/
