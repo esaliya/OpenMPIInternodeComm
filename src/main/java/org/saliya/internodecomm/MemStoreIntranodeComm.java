@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import static edu.rice.hj.Module0.asyncNbAwait;
 import static edu.rice.hj.Module0.launchHabaneroApp;
 import static edu.rice.hj.Module1.forallChunked;
 
@@ -111,6 +112,13 @@ public class MemStoreIntranodeComm {
         setParallelDecomposition(numberDataPoints, targetDimension);
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
+
+        for (int i = procRowStartOffset; i < procRowCount; ++i){
+            for (int j = 0; j < targetDimension; ++j){
+                double d = preX[i][j];
+                mmapXWriteBytes.writeDouble(d);
+            }
+        }
 
         System.out.println("Came here");
 
