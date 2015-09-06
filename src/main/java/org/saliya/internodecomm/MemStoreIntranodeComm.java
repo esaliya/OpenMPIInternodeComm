@@ -111,8 +111,7 @@ public class MemStoreIntranodeComm {
         setParallelDecomposition(numberDataPoints, targetDimension);
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
-        mmapXWriteBytes.writeDouble(10.2);
-        /*double[][] X = calculateNothing(preX, targetDimension);*/
+        double[][] X = calculateNothing(preX, targetDimension);
 
         MPI.Finalize();
     }
