@@ -17,7 +17,7 @@ public class MemStoreMPITest2 {
         int procRank = procComm.getRank();
         int procCount = procComm.getSize();
 
-        int totalRowCount = Integer.parseInt(args[0]);
+        int totalRowCount = Integer.parseInt(args[1]);
         int targetDimension = 3;
 
         int q = totalRowCount / procCount;
