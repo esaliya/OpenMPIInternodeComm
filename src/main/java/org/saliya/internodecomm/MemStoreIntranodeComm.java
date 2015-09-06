@@ -129,6 +129,7 @@ public class MemStoreIntranodeComm {
 
 //        for (int i = 0; i < size; ++i){
             bytes.writeDouble(Math.random());
+        mmapXWriteBytes.writeDouble(Math.random());
 //        }
 
         System.out.println("Came here");
