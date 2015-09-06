@@ -113,12 +113,15 @@ public class MemStoreIntranodeComm {
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
 
+        int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
+        int count = 0;
         for (int i = procRowStartOffset; i < procRowCount+procRowStartOffset; ++i){
             for (int j = 0; j < targetDimension; ++j){
                 double d = preX[i][j];
-                mmapXWriteBytes.writeDouble(d);
+                ++count;
             }
         }
+        System.out.println("Rank: " + worldProcRank + " " + (count*Double.BYTES == mmapXWriteByteExtent));
 
         System.out.println("Came here");
 
