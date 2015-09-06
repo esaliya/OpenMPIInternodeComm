@@ -113,17 +113,30 @@ public class MemStoreIntranodeComm {
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
 
+        int mmapXReadByteExtent = mmapProcsRowCount * targetDimension * Double.BYTES;
+        long mmapXReadByteOffset = 0L;
         int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
-        int count = 0;
-        for (int i = procRowStartOffset; i < procRowCount+procRowStartOffset; ++i){
-            for (int j = 0; j < targetDimension; ++j){
-                double d = preX[i][j];
-                ++count;
-            }
-        }
-        System.out.println("Rank: " + worldProcRank + " " + (count*Double.BYTES == mmapXWriteByteExtent));
+        long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex()) * targetDimension * Double.BYTES;
 
-        System.out.println("Came here");
+        final String mmapXFname = machineName + ".mmapId." + mmapIdLocalToNode + ".mmapX.bin";
+        try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
+                                                   FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent)) {
+
+            DirectBytes bytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
+            bytes.positionAndSize(0L, mmapXWriteByteExtent);
+            int count = 0;
+            for(int i = procRowStartOffset;i<procRowCount+procRowStartOffset;++i) {
+                for (int j = 0; j < targetDimension; ++j) {
+                    double d = preX[i][j];
+                    bytes.writeDouble(d);
+                    ++count;
+                }
+            }
+
+            System.out.println("Rank: "+worldProcRank+" "+(count*Double.BYTES==mmapXWriteByteExtent));
+
+            System.out.println("Came here");
+        }
 
         /*double[][] X = calculateNothing(preX, targetDimension);*/
 
@@ -247,6 +260,7 @@ public class MemStoreIntranodeComm {
         long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex()) * targetDimension * Double.BYTES;
         int fullXByteExtent = globalRowCount * targetDimension * Double.BYTES;
         long fullXByteOffset = 0L;
+/*
         try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
                                                        FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent);
             MappedStore fullXMS = new MappedStore(new File(mmapScratchDir + File.separator + fullXFname),
@@ -259,9 +273,6 @@ public class MemStoreIntranodeComm {
 
             fullXBytes = fullXMS.bytes();
             fullXByteBuffer = MPI.newByteBuffer(fullXByteExtent);
-
-            /*lockAndCountBytes = ByteBufferBytes.wrap(lockAndCountFc.map(
-                FileChannel.MapMode.READ_WRITE, 0, LOCK_AND_COUNT_EXTENT));*/
 
             // Print debug info in order of world ranks
             for (int i = 0; i < worldProcsCount; ++i){
@@ -309,6 +320,7 @@ public class MemStoreIntranodeComm {
                 }
             }
         }
+*/
     }
 
     public static double allReduce(double value) throws MPIException{
