@@ -126,6 +126,15 @@ public class MemStoreIntranodeComm {
             mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
 //            bytes.positionAndSize(0L, mmapXWriteByteExtent);
             mmapXWriteBytes.positionAndSize(0L, mmapXWriteByteExtent);*/
+        try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
+                                                   FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent)) {
+
+            //            DirectBytes bytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
+            mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
+            //            bytes.positionAndSize(0L, mmapXWriteByteExtent);
+            mmapXWriteBytes.positionAndSize(0L, mmapXWriteByteExtent);
+
+        }
             int count = 0;
             for(int i = procRowStartOffset;i<procRowCount+procRowStartOffset;++i) {
                 for (int j = 0; j < targetDimension; ++j) {
@@ -136,7 +145,9 @@ public class MemStoreIntranodeComm {
                 }
             }
 
-            System.out.println("Rank: "+worldProcRank+" "+(count*Double.BYTES==mmapXWriteByteExtent));
+            System.out.println(
+                "Rank: " + worldProcRank + " " + (count * Double.BYTES
+                                                  == mmapXWriteByteExtent));
 
             System.out.println("Came here");
         /*}*/
@@ -263,7 +274,7 @@ public class MemStoreIntranodeComm {
         long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex()) * targetDimension * Double.BYTES;
         int fullXByteExtent = globalRowCount * targetDimension * Double.BYTES;
         long fullXByteOffset = 0L;
-
+/*
         try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
                                                    FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent)) {
 
@@ -272,7 +283,7 @@ public class MemStoreIntranodeComm {
             //            bytes.positionAndSize(0L, mmapXWriteByteExtent);
             mmapXWriteBytes.positionAndSize(0L, mmapXWriteByteExtent);
 
-        }
+        }*/
 /*
         try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
                                                        FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent);
