@@ -111,7 +111,8 @@ public class MemStoreIntranodeComm {
         setParallelDecomposition(numberDataPoints, targetDimension);
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
-        double[][] X = calculateNothing(preX, targetDimension);
+        mmapXWriteBytes.writeDouble(10.2);
+        /*double[][] X = calculateNothing(preX, targetDimension);*/
 
         MPI.Finalize();
     }
@@ -484,15 +485,15 @@ public class MemStoreIntranodeComm {
     }
 
     private static void mergePartials(
-        double[][][] partials, int targetDimension, Bytes result){
+        double[][][] partials, int targetDimension, DirectBytes result){
         result.position(0);
         int pos = 0;
         for (double [][] partial : partials){
             for (double [] point : partial){
                 for (int i = 0; i < targetDimension; ++i){
-//                    result.position(pos);
-//                    result.writeDouble(point[i]);
-//                    pos += Double.BYTES;
+                    result.position(pos);
+                    result.writeDouble(point[i]);
+                    pos += Double.BYTES;
                 }
             }
         }
