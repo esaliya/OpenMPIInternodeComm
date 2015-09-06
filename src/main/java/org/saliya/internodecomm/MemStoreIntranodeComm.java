@@ -490,9 +490,9 @@ public class MemStoreIntranodeComm {
         for (double [][] partial : partials){
             for (double [] point : partial){
                 for (int i = 0; i < targetDimension; ++i){
-                    result.position(pos);
+//                    result.position(pos);
                     result.writeDouble(point[i]);
-                    pos += Double.BYTES;
+//                    pos += Double.BYTES;
                 }
             }
         }
