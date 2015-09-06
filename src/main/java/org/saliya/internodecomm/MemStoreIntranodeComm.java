@@ -117,16 +117,19 @@ public class MemStoreIntranodeComm {
         File f = new File(mmapScratchDir + "/test.ms");
         DirectBytes bytes = null;
         try {
-            MappedStore ms = new MappedStore(f, FileChannel.MapMode.READ_WRITE, extent<<3);
-            bytes = ms.bytes(size*worldProcRank*Double.BYTES, size*Double.BYTES);
+            int mmapXReadByteExtent = mmapProcsRowCount * targetDimension * Double.BYTES;
+            long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex()) * targetDimension * Double.BYTES;
+            int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
+            MappedStore ms = new MappedStore(f, FileChannel.MapMode.READ_WRITE, mmapXReadByteExtent);
+            bytes = ms.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
         }
         catch (IOException e) {
             e.printStackTrace();
         }
 
-        for (int i = 0; i < size; ++i){
-            bytes.writeDouble(i + Math.random());
-        }
+//        for (int i = 0; i < size; ++i){
+            bytes.writeDouble(Math.random());
+//        }
 
         System.out.println("Came here");
 
