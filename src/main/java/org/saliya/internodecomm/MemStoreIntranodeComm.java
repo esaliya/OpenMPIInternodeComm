@@ -122,13 +122,16 @@ public class MemStoreIntranodeComm {
         try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
                                                    FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent)) {
 
-            DirectBytes bytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
-            bytes.positionAndSize(0L, mmapXWriteByteExtent);
+//            DirectBytes bytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
+            mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
+//            bytes.positionAndSize(0L, mmapXWriteByteExtent);
+            mmapXWriteBytes.positionAndSize(0L, mmapXWriteByteExtent);
             int count = 0;
             for(int i = procRowStartOffset;i<procRowCount+procRowStartOffset;++i) {
                 for (int j = 0; j < targetDimension; ++j) {
                     double d = preX[i][j];
-                    bytes.writeDouble(d);
+//                    bytes.writeDouble(d);
+                    mmapXWriteBytes.writeDouble(d);
                     ++count;
                 }
             }
