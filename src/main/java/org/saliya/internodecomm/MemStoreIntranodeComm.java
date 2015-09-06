@@ -112,161 +112,12 @@ public class MemStoreIntranodeComm {
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
 
-        long size = 200;
-        long extent = size * worldProcsCount;
-        File f = new File(mmapScratchDir + "/test.ms");
-        DirectBytes bytes = null;
-        try {
-            int mmapXReadByteExtent = mmapProcsRowCount * targetDimension * Double.BYTES;
-            long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex()) * targetDimension * Double.BYTES;
-            int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
-            MappedStore ms = new MappedStore(f, FileChannel.MapMode.READ_WRITE, mmapXReadByteExtent);
-            bytes = ms.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
-
-            for (int t = 0; t < threadCount; ++t) {
-                int threadRowCount = threadRowCounts[t];
-                for (int i = 0; i < threadRowCount; ++i) {
-                    for (int j = 0; j < targetDimension; ++j) {
-                        double d = 10.2;
-                        bytes.writeDouble(d);
-                        //                    mmapXWriteBytes.writeDouble(Math.random());
-                    }
-                }
-            }
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-
         System.out.println("Came here");
 
         /*double[][] X = calculateNothing(preX, targetDimension);*/
 
         MPI.Finalize();
     }
-
-    private static double[][] calculateNothing(double[][] preX, int targetDimension) throws MPIException, InterruptedException {
-        double [][][] partials = new double[threadCount][][];
-
-        if (threadCount > 1) {
-            launchHabaneroApp(
-                () -> forallChunked(
-                    0, threadCount - 1,
-                    (threadIdx) -> {
-                        partials[threadIdx] =
-                            calculateNothingInternal(threadIdx, preX,
-                                                     targetDimension);
-                    }));
-        }
-        else {
-            partials[0] = calculateNothingInternal(
-                0, preX, targetDimension);
-        }
-
-        if (worldProcsCount > 1) {
-            mergePartials(partials, targetDimension, mmapXWriteBytes);
-            /*
-            // Check if you get points local to you as is if read by mmapXWriteBytes - This MUST work unless some indexing error with points
-            for (int i = procRowStartOffset; i < procRowStartOffset+procRowCount; ++i){
-                for (int j = 0; j < targetDimension; ++j){
-                    double originalValue = preX[i][j];
-                    double writtenValue = mmapXWriteBytes.readDouble((i-procRowStartOffset)*targetDimension*Double.BYTES + j*Double.BYTES);
-                    if (writtenValue != originalValue){
-                        System.out.println(
-                            "Rank " + worldProcRank + " testloopNeg2-(" + i + "," + j + ") originalValue " + originalValue + " writtenValue " + writtenValue);
-                    }
-                }
-            }
-
-            // Check if what you wrote can be read through your reader
-            int offset = procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex();
-            for (int i = procRowStartOffset; i < procRowStartOffset+procRowCount; ++i){
-                for (int j = 0; j < targetDimension; ++j) {
-                    double originalValue = preX[i][j];
-                    double writtenValueAsReadByReader = mmapXReadBytes.readDouble((offset+(i-procRowStartOffset))*targetDimension*Double.BYTES + j*Double.BYTES);
-                    if (originalValue != writtenValueAsReadByReader) {
-                        System.out.println(
-                            "Rank " + worldProcRank + " testloopNeg1-(" + i +
-                            "," + j + ") originalValue " + originalValue
-                            + " writtenValueAsReadByReader " +
-                            writtenValueAsReadByReader);
-                    }
-                }
-            }
-
-
-            // Check if what all in your mem group wrote can be read through your reader
-            int mmapLeadRowOffset = procRowRanges[mmapLeadWorldRank].getStartIndex();
-            for (int i = 0; i < mmapProcsRowCount; ++i){
-                for (int j = 0; j < targetDimension; ++j){
-                    double writtenValue = mmapXReadBytes.readDouble(i*targetDimension*Double.BYTES+j*Double.BYTES);
-                    double originalValue = preX[mmapLeadRowOffset+i][j];
-                    if (writtenValue != originalValue){
-                        System.out.println(
-                            "Rank " + worldProcRank + " testloop0-(" + i + "," + j + ") originalValue " + originalValue + " writtenValue " + writtenValue);
-                    }
-                }
-            }
-*/
-            return null;
-            /*if (isMmapLead) {
-                partialXAllGather();
-            }
-            // Each process in a memory group waits here.
-            // It's not necessary to wait for a process
-            // in another memory map group, hence the use of mmapProcComm
-            //            mmapProcComm.barrier();
-            // TODO - remove after testing
-            worldProcsComm.barrier();
-
-            double[][] result = extractPoints(
-                fullXBytes, globalColCount,
-                targetDimension);
-            if (worldProcRank == 0) {
-                // TODO - a test to see if we assume writes are all good then this read should be good
-                // because it's reading the buffer returned by MPI allgather.
-                // OK it's a FAILURE, so writing may not be good.
-                *//*result = extractPoints(
-                    fullXByteBuffer, globalColCount,
-                    targetDimension);*//*
-                for (int i = 0; i < result.length; ++i) {
-                    for (int j = 0; j < targetDimension; ++j) {
-                        if (preX[i][j] != result[i][j]) {
-                            System.out.println(
-                                "testloop1-(" + i + "," + j + ") preX " + preX[i][j] + " result " + result[i][j]);
-                        }
-                    }
-                }
-            }
-            return result;*/
-        }else {
-            double [][] result = new double[globalColCount][targetDimension];
-            mergePartials(partials, targetDimension, result);
-            for (int i = 0; i < result.length; ++i) {
-                for (int j = 0; j < targetDimension; ++j) {
-                    if (preX[i][j] != result[i][j]) {
-                        System.out.println(
-                            "testloop-2(" + i + "," + j + ") preX " + preX[i][j] + " result " + result[i][j]);
-                    }
-                }
-            }
-            return result;
-        }
-
-    }
-
-    private static double[][] calculateNothingInternal(int threadIdx, double[][] preX, int targetDimension){
-        final int threadRowCount = threadRowCounts[threadIdx];
-        final int globalRowStartOffset = threadRowStartOffsets[threadIdx] + procRowStartOffset;
-        double[][] array = new double[threadRowCount][targetDimension];
-        for (int i = globalRowStartOffset; i < threadRowCount+globalRowStartOffset; ++i){
-            System.arraycopy(preX[i], 0, array[i-globalRowStartOffset],0, targetDimension);
-        }
-        return array;
-    }
-
 
     public static void setupParallelism() throws MPIException {
         worldProcsComm = MPI.COMM_WORLD; //initializing MPI world communicator
@@ -375,7 +226,6 @@ public class MemStoreIntranodeComm {
 
         final String mmapXFname = machineName + ".mmapId." + mmapIdLocalToNode + ".mmapX.bin";
         final String fullXFname = machineName + ".mmapId." + mmapIdLocalToNode +".fullX.bin";
-        final String lockAndCountFname = machineName + ".lockAndCount.bin";
 
         int mmapXReadByteExtent = mmapProcsRowCount * targetDimension * Double.BYTES;
         long mmapXReadByteOffset = 0L;
@@ -419,6 +269,7 @@ public class MemStoreIntranodeComm {
                             "World rank: " + worldProcRank + " on " + machineName);
                         writer.println("  mmapIdLocalToNode:             " + mmapIdLocalToNode);
                         writer.println("  mmapProcsCount:                " + mmapProcsCount);
+                        writer.println("  mmapProcsRowCount:                " + mmapProcsRowCount);
                         writer.println("  isMmapLead:                    " + isMmapLead);
                         writer.println("  mmapProcsWorldRanks:           " + Arrays.toString(
                             mmapProcsWorldRanks));
@@ -456,20 +307,6 @@ public class MemStoreIntranodeComm {
         intBuffer.put(0, value);
         worldProcsComm.allReduce(intBuffer, 1, MPI.INT, MPI.SUM);
         return intBuffer.get(0);
-    }
-
-    public static void partialXAllGather() throws MPIException {
-        mmapXReadByteBuffer.position(0);
-        mmapXReadBytes.position(0);
-        mmapXReadBytes.read(mmapXReadByteBuffer);
-        fullXByteBuffer.position(0);
-        cgProcComm.allGatherv(mmapXReadByteBuffer,
-                              cgProcsMmapXByteExtents[cgProcRank], MPI.BYTE,
-                              fullXByteBuffer, cgProcsMmapXByteExtents,
-                              cgProcsMmapXDisplas, MPI.BYTE);
-        fullXBytes.position(0);
-        fullXByteBuffer.position(0);
-        fullXBytes.write(fullXByteBuffer);
     }
 
     public static void broadcast(DoubleBuffer buffer, int extent, int root)
