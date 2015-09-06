@@ -7,8 +7,11 @@ import mpi.MPI;
 import mpi.MPIException;
 import net.openhft.lang.io.ByteBufferBytes;
 import net.openhft.lang.io.Bytes;
+import net.openhft.lang.io.DirectBytes;
+import net.openhft.lang.io.MappedStore;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
@@ -26,8 +29,7 @@ import java.util.stream.IntStream;
 import static edu.rice.hj.Module0.launchHabaneroApp;
 import static edu.rice.hj.Module1.forallChunked;
 
-
-public class MemMapInternodeComm {
+public class MemStoreIntranodeComm {
     public static String machineName;
     public static int nodeCount=1;
     public static int threadCount=1;
@@ -86,10 +88,10 @@ public class MemMapInternodeComm {
     public static LongBuffer threadsAndMPIBuffer;
     public static LongBuffer mpiOnlyBuffer;
 
-    public static Bytes mmapXReadBytes;
+    public static DirectBytes mmapXReadBytes;
     public static ByteBuffer mmapXReadByteBuffer;
-    public static Bytes mmapXWriteBytes;
-    public static Bytes fullXBytes;
+    public static DirectBytes mmapXWriteBytes;
+    public static DirectBytes fullXBytes;
     public static ByteBuffer fullXByteBuffer;
 
 
@@ -101,7 +103,7 @@ public class MemMapInternodeComm {
         threadCount = Integer.parseInt(args[1]);
         mmapsPerNode = Integer.parseInt(args[2]);
         mmapScratchDir = args[3];
-        
+
         int numberDataPoints = Integer.parseInt(args[4]);
         int targetDimension = Integer.parseInt(args[5]);
 
@@ -290,7 +292,7 @@ public class MemMapInternodeComm {
     public static void setParallelDecomposition(int globalRowCount, int targetDimension)
         throws MPIException, IOException {
         procRowRanges = RangePartitioner.partition(globalRowCount,
-                                                       worldProcsCount);
+                                                   worldProcsCount);
         Range rowRange = procRowRanges[worldProcRank]; // The range of points for this process
 
         procRowRange = rowRange;
@@ -326,7 +328,7 @@ public class MemMapInternodeComm {
         cgProcsMmapXByteExtents = new int[cgProcsCount];
         cgProcsMmapXDisplas = new int[cgProcsCount];
         mmapProcsRowCount = IntStream.range(mmapLeadWorldRank,
-                                   mmapLeadWorldRank + mmapProcsCount)
+                                            mmapLeadWorldRank + mmapProcsCount)
             .map(i -> procRowRanges[i].getLength())
             .sum();
         if (isMmapLead){
@@ -344,43 +346,24 @@ public class MemMapInternodeComm {
         final String mmapXFname = machineName + ".mmapId." + mmapIdLocalToNode + ".mmapX.bin";
         final String fullXFname = machineName + ".mmapId." + mmapIdLocalToNode +".fullX.bin";
         final String lockAndCountFname = machineName + ".lockAndCount.bin";
-        try (FileChannel mmapXFc = FileChannel.open(Paths.get(mmapScratchDir,
-                                                                 mmapXFname),
-                                                       StandardOpenOption
-                                                           .CREATE,
-                                                       StandardOpenOption.READ,
-                                                       StandardOpenOption
-                                                           .WRITE);
-            FileChannel fullXFc = FileChannel.open(Paths.get(mmapScratchDir,
-                                                             fullXFname),
-                                                   StandardOpenOption.CREATE,StandardOpenOption.WRITE,StandardOpenOption.READ);
-            /*FileChannel lockAndCountFc = FileChannel.open(Paths.get(
-                                                              mmapScratchDir,
-                                                              lockAndCountFname),
-                                                          StandardOpenOption
-                                                              .CREATE,
-                                                          StandardOpenOption.READ,
-                                                          StandardOpenOption.WRITE)*/){
 
+        int mmapXReadByteExtent = mmapProcsRowCount * targetDimension * Double.BYTES;
+        long mmapXReadByteOffset = 0L;
+        int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
+        long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex()) * targetDimension * Double.BYTES;
+        int fullXByteExtent = globalRowCount * targetDimension * Double.BYTES;
+        long fullXByteOffset = 0L;
+        try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
+                                                       FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent);
+            MappedStore fullXMS = new MappedStore(new File(mmapScratchDir + File.separator + fullXFname),
+                                                  FileChannel.MapMode.READ_WRITE,fullXByteExtent)){
 
-            int mmapXReadByteExtent = mmapProcsRowCount * targetDimension * Double.BYTES;
-            long mmapXReadByteOffset = 0L;
-            int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
-            long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex()) * targetDimension * Double.BYTES;
-            int fullXByteExtent = globalRowCount * targetDimension * Double.BYTES;
-            long fullXByteOffset = 0L;
-
-            mmapXReadBytes = ByteBufferBytes.wrap(mmapXFc.map(
-                FileChannel.MapMode.READ_WRITE, mmapXReadByteOffset, mmapXReadByteExtent));
-            /*mmapXReadByteBuffer = mmapXReadBytes.sliceAsByteBuffer(
-                mmapXReadByteBuffer);*/
+            mmapXReadBytes = mmapXMS.bytes();
             mmapXReadByteBuffer = MPI.newByteBuffer(mmapXReadByteExtent);
 
-            mmapXReadBytes.position(0);
-            mmapXWriteBytes = mmapXReadBytes.slice(mmapXWriteByteOffset, mmapXWriteByteExtent);
+            mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
 
-            fullXBytes = ByteBufferBytes.wrap(fullXFc.map(FileChannel.MapMode.READ_WRITE,
-                                                          fullXByteOffset, fullXByteExtent));
+            fullXBytes = fullXMS.bytes();
             fullXByteBuffer = MPI.newByteBuffer(fullXByteExtent);
 
             /*lockAndCountBytes = ByteBufferBytes.wrap(lockAndCountFc.map(
@@ -393,7 +376,10 @@ public class MemMapInternodeComm {
                 int next = intBuffer.get(0);
                 if (next == worldProcRank){
                     try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(
-                                                                         "mmap.debug" + worldProcRank + ".out.txt"),
+                                                                         "mmap.debug"
+                                                                         +
+                                                                         worldProcRank
+                                                                         + ".out.txt"),
                                                                      StandardOpenOption.CREATE,
                                                                      StandardOpenOption.WRITE)) {
 
@@ -555,4 +541,5 @@ public class MemMapInternodeComm {
         }
         return  points;
     }
+
 }
