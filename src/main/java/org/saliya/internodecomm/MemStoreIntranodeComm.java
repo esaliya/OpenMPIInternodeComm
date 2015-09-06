@@ -127,10 +127,15 @@ public class MemStoreIntranodeComm {
             e.printStackTrace();
         }
 
-//        for (int i = 0; i < size; ++i){
-            bytes.writeDouble(Math.random());
-        mmapXWriteBytes.writeDouble(Math.random());
-//        }
+        for (int t = 0; t < threadCount; ++t) {
+            int threadRowCount = threadRowCounts[t];
+            for (int i = 0; i < threadRowCount; ++i) {
+                for (int j = 0; j < targetDimension; ++j) {
+                    bytes.writeDouble(Math.random());
+                    mmapXWriteBytes.writeDouble(Math.random());
+                }
+            }
+        }
 
         System.out.println("Came here");
 
