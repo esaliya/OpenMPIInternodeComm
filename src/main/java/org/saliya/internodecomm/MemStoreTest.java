@@ -10,7 +10,7 @@ import java.nio.channels.FileChannel;
 public class MemStoreTest {
     public static void main(String[] args) {
         long size = 2000;
-        File f = new File("src/main/resources/test.ms");
+        File f = new File(args[0] + "/test.ms");
         try {
             MappedStore ms = new MappedStore(f, FileChannel.MapMode.READ_WRITE, size<<3);
             DirectBytes bytes = ms.bytes();
