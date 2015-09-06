@@ -113,7 +113,7 @@ public class MemStoreIntranodeComm {
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
 
-        for (int i = procRowStartOffset; i < procRowCount; ++i){
+        for (int i = procRowStartOffset; i < procRowCount+procRowStartOffset; ++i){
             for (int j = 0; j < targetDimension; ++j){
                 double d = preX[i][j];
                 mmapXWriteBytes.writeDouble(d);
