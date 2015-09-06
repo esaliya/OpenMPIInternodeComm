@@ -127,9 +127,9 @@ public class MemStoreIntranodeComm {
 
         /*double[][] X = calculateNothing(preX, targetDimension);*/
 
-        mmapXReadBytes.release();
+        /*mmapXReadBytes.release();
         mmapXWriteBytes.release();
-        fullXBytes.release();
+        fullXBytes.release();*/
         MPI.Finalize();
     }
 
