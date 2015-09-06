@@ -131,7 +131,7 @@ public class MemStoreIntranodeComm {
             int threadRowCount = threadRowCounts[t];
             for (int i = 0; i < threadRowCount; ++i) {
                 for (int j = 0; j < targetDimension; ++j) {
-                    double d = Math.random();
+                    double d = 10.2;
                     bytes.writeDouble(d);
 //                    mmapXWriteBytes.writeDouble(Math.random());
                 }
