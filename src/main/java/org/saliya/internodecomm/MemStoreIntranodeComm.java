@@ -111,7 +111,10 @@ public class MemStoreIntranodeComm {
         setParallelDecomposition(numberDataPoints, targetDimension);
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
-        double[][] X = calculateNothing(preX, targetDimension);
+
+        mmapXWriteBytes.writeDouble(10.2);
+
+        /*double[][] X = calculateNothing(preX, targetDimension);*/
 
         MPI.Finalize();
     }
@@ -357,7 +360,7 @@ public class MemStoreIntranodeComm {
             MappedStore fullXMS = new MappedStore(new File(mmapScratchDir + File.separator + fullXFname),
                                                   FileChannel.MapMode.READ_WRITE,fullXByteExtent)){
 
-            mmapXReadBytes = mmapXMS.bytes();
+//            mmapXReadBytes = mmapXMS.bytes();
             mmapXReadByteBuffer = MPI.newByteBuffer(mmapXReadByteExtent);
 
             mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
