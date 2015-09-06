@@ -89,6 +89,8 @@ public class MemStoreIntranodeComm {
     public static LongBuffer threadsAndMPIBuffer;
     public static LongBuffer mpiOnlyBuffer;
 
+    public static MappedStore mmapXMS;
+    public static MappedStore fullXMS;
     public static DirectBytes mmapXReadBytes;
     public static ByteBuffer mmapXReadByteBuffer;
     public static DirectBytes mmapXWriteBytes;
@@ -113,19 +115,28 @@ public class MemStoreIntranodeComm {
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
 
-        int mmapXReadByteExtent = mmapProcsRowCount * targetDimension * Double.BYTES;
+        for (int i = procRowStartOffset;
+             i < procRowCount + procRowStartOffset; ++i) {
+            for (int j = 0; j < targetDimension; ++j) {
+                double d = preX[i][j];
+                mmapXWriteBytes.writeDouble(d);
+            }
+        }
+        System.out.println("Came here");
+
+       /* int mmapXReadByteExtent = mmapProcsRowCount * targetDimension * Double.BYTES;
         long mmapXReadByteOffset = 0L;
         int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
         long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex()) * targetDimension * Double.BYTES;
 
         final String mmapXFname = machineName + ".mmapId." + mmapIdLocalToNode + ".mmapX.bin";
-        /*try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
+        *//*try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
                                                    FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent)) {
 
 //            DirectBytes bytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
             mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
 //            bytes.positionAndSize(0L, mmapXWriteByteExtent);
-            mmapXWriteBytes.positionAndSize(0L, mmapXWriteByteExtent);*/
+            mmapXWriteBytes.positionAndSize(0L, mmapXWriteByteExtent);*//*
         try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
                                                    FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent)) {
 
@@ -152,7 +163,7 @@ public class MemStoreIntranodeComm {
                                                   == mmapXWriteByteExtent));
 
             System.out.println("Came here");
-        }
+        }*/
         /*}*/
 
         /*double[][] X = calculateNothing(preX, targetDimension);*/
@@ -160,6 +171,16 @@ public class MemStoreIntranodeComm {
         /*mmapXReadBytes.release();
         mmapXWriteBytes.release();
         fullXBytes.release();*/
+        tearDownParallelism();
+    }
+
+    public static void tearDownParallelism() throws MPIException {
+        if (mmapXMS != null) mmapXMS.close();
+        if (fullXMS != null) fullXMS.close();
+        if (mmapXReadBytes != null) mmapXReadBytes.close();
+        if (mmapXWriteBytes != null) mmapXWriteBytes.close();
+        if (fullXBytes != null) fullXBytes.close();
+
         MPI.Finalize();
     }
 
@@ -277,77 +298,20 @@ public class MemStoreIntranodeComm {
         long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex()) * targetDimension * Double.BYTES;
         int fullXByteExtent = globalRowCount * targetDimension * Double.BYTES;
         long fullXByteOffset = 0L;
-/*
-        try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
-                                                   FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent)) {
 
-            //            DirectBytes bytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
-            mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
-            //            bytes.positionAndSize(0L, mmapXWriteByteExtent);
-            mmapXWriteBytes.positionAndSize(0L, mmapXWriteByteExtent);
 
-        }*/
-/*
-        try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
-                                                       FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent);
-            MappedStore fullXMS = new MappedStore(new File(mmapScratchDir + File.separator + fullXFname),
-                                                  FileChannel.MapMode.READ_WRITE,fullXByteExtent)){
+        mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
+                                              FileChannel.MapMode.READ_WRITE,mmapXReadByteExtent);
+        fullXMS = new MappedStore(new File(mmapScratchDir + File.separator + fullXFname),
+                                              FileChannel.MapMode.READ_WRITE,fullXByteExtent);
 
-//            mmapXReadBytes = mmapXMS.bytes();
-            mmapXReadByteBuffer = MPI.newByteBuffer(mmapXReadByteExtent);
+        mmapXReadBytes = mmapXMS.bytes(mmapXReadByteOffset, mmapXReadByteExtent);
+        mmapXReadByteBuffer = MPI.newByteBuffer(mmapXReadByteExtent);
 
-            mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
+        mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
 
-            fullXBytes = fullXMS.bytes();
-            fullXByteBuffer = MPI.newByteBuffer(fullXByteExtent);
-
-            // Print debug info in order of world ranks
-            for (int i = 0; i < worldProcsCount; ++i){
-                intBuffer.put(0, i);
-                worldProcsComm.bcast(intBuffer, 1, MPI.INT, 0);
-                int next = intBuffer.get(0);
-                if (next == worldProcRank){
-                    try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(
-                                                                         "mmap.debug"
-                                                                         +
-                                                                         worldProcRank
-                                                                         + ".out.txt"),
-                                                                     StandardOpenOption.CREATE,
-                                                                     StandardOpenOption.WRITE)) {
-
-                        PrintWriter writer = new PrintWriter(bw, true);
-                        // Good it's my turn to print
-                        writer.println(
-                            "World rank: " + worldProcRank + " on " + machineName);
-                        writer.println("  mmapIdLocalToNode:             " + mmapIdLocalToNode);
-                        writer.println("  mmapProcsCount:                " + mmapProcsCount);
-                        writer.println("  mmapProcsRowCount:                " + mmapProcsRowCount);
-                        writer.println("  isMmapLead:                    " + isMmapLead);
-                        writer.println("  mmapProcsWorldRanks:           " + Arrays.toString(
-                            mmapProcsWorldRanks));
-                        writer.println("  mmapLeadWorldRankLocalToNode:  "
-                                       + "" + mmapLeadWorldRankLocalToNode);
-                        writer.println("  mmapLeadWorldRank:             " + mmapLeadWorldRank);
-                        writer.println("  cgProcRank:                    " + cgProcRank);
-                        writer.println("  cgProcsCount:                  "
-                                       + "" + cgProcsCount);
-                        writer.println("  cgProcsMmapRowCounts:              "
-                                       + Arrays.toString(cgProcsMmapRowCounts));
-                        writer.println("  mmapXReadByteExtent:      "
-                                       + mmapXReadByteExtent);
-                        writer.println("  mmapXWriteByteExtent:           "
-                                       + mmapXWriteByteExtent);
-                        writer.println("  mmapXWriteByteOffset:                "
-                                       + mmapXWriteByteOffset);
-                        writer.println("  fullXByteExtent:                   "
-                                       + fullXByteExtent);
-                        writer.println("  fullXByteOffset:                   "
-                                       + fullXByteOffset);
-                    }
-                }
-            }
-        }
-*/
+        fullXBytes = fullXMS.bytes(fullXByteOffset, fullXByteExtent);
+        fullXByteBuffer = MPI.newByteBuffer(fullXByteExtent);
     }
 
     public static double allReduce(double value) throws MPIException{
