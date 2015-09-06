@@ -136,6 +136,7 @@ public class MemStoreIntranodeComm {
 
         if (worldProcsCount > 1) {
             mergePartials(partials, targetDimension, mmapXWriteBytes);
+            /*
             // Check if you get points local to you as is if read by mmapXWriteBytes - This MUST work unless some indexing error with points
             for (int i = procRowStartOffset; i < procRowStartOffset+procRowCount; ++i){
                 for (int j = 0; j < targetDimension; ++j){
@@ -177,7 +178,7 @@ public class MemStoreIntranodeComm {
                     }
                 }
             }
-
+*/
             return null;
             /*if (isMmapLead) {
                 partialXAllGather();
