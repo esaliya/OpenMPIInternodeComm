@@ -122,21 +122,23 @@ public class MemStoreIntranodeComm {
             int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
             MappedStore ms = new MappedStore(f, FileChannel.MapMode.READ_WRITE, mmapXReadByteExtent);
             bytes = ms.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
+
+            for (int t = 0; t < threadCount; ++t) {
+                int threadRowCount = threadRowCounts[t];
+                for (int i = 0; i < threadRowCount; ++i) {
+                    for (int j = 0; j < targetDimension; ++j) {
+                        double d = 10.2;
+                        bytes.writeDouble(d);
+                        //                    mmapXWriteBytes.writeDouble(Math.random());
+                    }
+                }
+            }
         }
         catch (IOException e) {
             e.printStackTrace();
         }
 
-        for (int t = 0; t < threadCount; ++t) {
-            int threadRowCount = threadRowCounts[t];
-            for (int i = 0; i < threadRowCount; ++i) {
-                for (int j = 0; j < targetDimension; ++j) {
-                    double d = 10.2;
-                    bytes.writeDouble(d);
-//                    mmapXWriteBytes.writeDouble(Math.random());
-                }
-            }
-        }
+
 
         System.out.println("Came here");
 
