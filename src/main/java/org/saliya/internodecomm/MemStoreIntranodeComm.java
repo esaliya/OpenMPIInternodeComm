@@ -112,7 +112,23 @@ public class MemStoreIntranodeComm {
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
 
+        long
+            mmapXWriteByteOffset =
+            (procRowStartOffset
+             - procRowRanges[mmapLeadWorldRank].getStartIndex())
+            * targetDimension * Double.BYTES;
+
+        long count = 0L;
         for (int i = procRowStartOffset;
+             i < procRowCount + procRowStartOffset; ++i) {
+            for (int j = 0; j < targetDimension; ++j) {
+                double d = preX[i][j];
+                mmapXReadBytes.writeDouble(mmapXWriteByteOffset + count* Double.BYTES, d);
+                ++count;
+            }
+        }
+
+        /*for (int i = procRowStartOffset;
              i < procRowCount + procRowStartOffset; ++i) {
             for (int j = 0; j < targetDimension; ++j) {
                 double d = preX[i][j];
@@ -129,7 +145,7 @@ public class MemStoreIntranodeComm {
                     System.out.println("Shit! It's wrong still at i " + i  + " j " + j + "on rank " + worldProcRank);
                 }
             }
-        }
+        }*/
         System.out.println("Came here");
 
        /* int mmapXReadByteExtent = mmapProcsRowCount * targetDimension * Double.BYTES;
