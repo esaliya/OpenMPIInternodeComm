@@ -177,37 +177,29 @@ public class MemMapIntranodeComm {
                 }
             }
 
-            return null;
-            /*if (isMmapLead) {
+            if (isMmapLead) {
                 partialXAllGather();
             }
             // Each process in a memory group waits here.
             // It's not necessary to wait for a process
             // in another memory map group, hence the use of mmapProcComm
-            //            mmapProcComm.barrier();
-            // TODO - remove after testing
-            worldProcsComm.barrier();
+            mmapProcComm.barrier();
 
+            // TODO - a test to see if we assume writes are all good then this read should be good
+            // because it's reading the buffer returned by MPI allgather.
+            // OK it's a FAILURE, so writing may not be good.
             double[][] result = extractPoints(
-                fullXBytes, globalColCount,
+                fullXByteBuffer, globalColCount,
                 targetDimension);
-            if (worldProcRank == 0) {
-                // TODO - a test to see if we assume writes are all good then this read should be good
-                // because it's reading the buffer returned by MPI allgather.
-                // OK it's a FAILURE, so writing may not be good.
-                *//*result = extractPoints(
-                    fullXByteBuffer, globalColCount,
-                    targetDimension);*//*
-                for (int i = 0; i < result.length; ++i) {
-                    for (int j = 0; j < targetDimension; ++j) {
-                        if (preX[i][j] != result[i][j]) {
-                            System.out.println(
-                                "testloop1-(" + i + "," + j + ") preX " + preX[i][j] + " result " + result[i][j]);
-                        }
+            for (int i = 0; i < result.length; ++i) {
+                for (int j = 0; j < targetDimension; ++j) {
+                    if (preX[i][j] != result[i][j]) {
+                        System.out.println(
+                            "Rank " + worldProcRank + " testloop1-(" + i + "," + j + ") preX " + preX[i][j] + " result " + result[i][j]);
                     }
                 }
             }
-            return result;*/
+            return result;
         }else {
             double [][] result = new double[globalColCount][targetDimension];
             mergePartials(partials, targetDimension, result);
