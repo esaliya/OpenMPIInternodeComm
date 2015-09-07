@@ -189,7 +189,7 @@ public class MemMapIntranodeComm {
             // because it's reading the buffer returned by MPI allgather.
             // OK it's a FAILURE, so writing may not be good.
             double[][] result = extractPoints(
-                fullXByteBuffer, globalColCount,
+                fullXBytes, globalColCount,
                 targetDimension);
             for (int i = 0; i < result.length; ++i) {
                 for (int j = 0; j < targetDimension; ++j) {
