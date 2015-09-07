@@ -128,6 +128,17 @@ public class MemStoreIntranodeComm {
             }
         }
 
+        final int startIndex = procRowRanges[mmapLeadWorldRank].getStartIndex();
+        for (int i = startIndex; i < startIndex+mmapProcsRowCount; ++i){
+            for (int j = 0; j < targetDimension; ++j){
+                double original = preX[i][j];
+                double read = mmapXReadBytes.readDouble(((i-startIndex)*targetDimension+j)*Double.BYTES);
+                if (original != read){
+                    System.out.println("Shit! It's wrong still at i " + i  + " j " + j + "on rank " + worldProcRank);
+                }
+            }
+        }
+
         /*for (int i = procRowStartOffset;
              i < procRowCount + procRowStartOffset; ++i) {
             for (int j = 0; j < targetDimension; ++j) {
