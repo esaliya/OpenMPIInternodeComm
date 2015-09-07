@@ -132,7 +132,7 @@ public class MemStoreIntranodeComm {
         for (int i = startIndex; i < startIndex+mmapProcsRowCount; ++i){
             for (int j = 0; j < targetDimension; ++j){
                 double original = preX[i][j];
-                double read = mmapXReadBytes.readDouble(((i-startIndex)*targetDimension+j)*Double.BYTES);
+                double read = mmapXReadBytes.readDouble((((i-startIndex)*targetDimension)+j)*Double.BYTES);
                 if (original != read){
                     System.out.println("Shit! It's wrong still at i " + i  + " j " + j + "on rank " + worldProcRank);
                 }
