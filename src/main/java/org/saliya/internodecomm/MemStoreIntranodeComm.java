@@ -2,6 +2,7 @@ package org.saliya.internodecomm;
 
 import edu.indiana.soic.spidal.common.Range;
 import edu.indiana.soic.spidal.common.RangePartitioner;
+import mpi.Comm;
 import mpi.Intracomm;
 import mpi.MPI;
 import mpi.MPIException;
@@ -112,6 +113,7 @@ public class MemStoreIntranodeComm {
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
 
+        DoubleBuffer mmapXpartial = MPI.newDoubleBuffer(procRowCount * targetDimension * Double.BYTES);
         long
             mmapXWriteByteOffset =
             (procRowStartOffset
@@ -124,15 +126,21 @@ public class MemStoreIntranodeComm {
             for (int j = 0; j < targetDimension; ++j) {
                 double d = preX[i][j];
                 mmapXReadBytes.writeDouble(mmapXWriteByteOffset + count* Double.BYTES, d);
+                mmapXpartial.put(d);
                 ++count;
             }
         }
+
+        DoubleBuffer mmapXfull = MPI.newDoubleBuffer(mmapProcsRowCount * targetDimension * Double.BYTES);
+        allGather(mmapXpartial, mmapXfull, targetDimension, mmapProcComm.getSize(), mmapProcComm.getRank(), mmapProcComm);
+        double[][] whatWeWrote = extractPoints(mmapXfull,mmapProcsRowCount, targetDimension);
 
         final int startIndex = procRowRanges[mmapLeadWorldRank].getStartIndex();
         for (int i = startIndex; i < startIndex+mmapProcsRowCount; ++i){
             for (int j = 0; j < targetDimension; ++j){
                 double original = preX[i][j];
-                double read = mmapXReadBytes.readDouble((((i-startIndex)*targetDimension)+j)*Double.BYTES);
+                double read = whatWeWrote[i-startIndex][j];
+//                double read = mmapXReadBytes.readDouble((((i-startIndex)*targetDimension)+j)*Double.BYTES);
                 if (original != read){
                     System.out.println("Shit! It's wrong still at i " + i  + " j " + j + "on rank " + worldProcRank);
                 }
@@ -207,6 +215,21 @@ public class MemStoreIntranodeComm {
         mmapXWriteBytes.release();
         fullXBytes.release();*/
         tearDownParallelism();
+    }
+
+    public static void allGather(
+        DoubleBuffer partialPointBuffer, DoubleBuffer result, int dimension, int procCount,
+        int procRank, Comm procComm) throws MPIException {
+
+        int [] lengths = new int[procCount];
+        int length = procRowCount * dimension;
+        lengths[procRank] = length;
+        procComm.allGather(lengths, 1, MPI.INT);
+        int [] displas = new int[procCount];
+        displas[0] = 0;
+        System.arraycopy(lengths, 0, displas, 1, procCount - 1);
+        Arrays.parallelPrefix(displas, (m, n) -> m + n);
+        procComm.allGatherv(partialPointBuffer, length, MPI.DOUBLE, result, lengths, displas, MPI.DOUBLE);
     }
 
     public static void tearDownParallelism() throws MPIException {
