@@ -130,6 +130,7 @@ public class MemStoreIntranodeComm {
                 ++count;
             }
         }
+        mmapProcComm.barrier();
 
         DoubleBuffer mmapXfull = MPI.newDoubleBuffer(mmapProcsRowCount * targetDimension * Double.BYTES);
         allGather(mmapXpartial, mmapXfull, targetDimension, mmapProcComm.getSize(), mmapProcComm.getRank(), mmapProcComm);
@@ -140,8 +141,8 @@ public class MemStoreIntranodeComm {
             for (int j = 0; j < targetDimension; ++j){
                 double original = preX[i][j];
 //                double read = whatWeWrote[i-startIndex][j];
-                double read = mmapXfull.get((((i-startIndex)*targetDimension)+j));
-//                double read = mmapXReadBytes.readDouble((((i-startIndex)*targetDimension)+j)*Double.BYTES);
+//                double read = mmapXfull.get((((i-startIndex)*targetDimension)+j));
+                double read = mmapXReadBytes.readDouble((((i-startIndex)*targetDimension)+j)*Double.BYTES);
                 if (original != read){
                     System.out.println("Shit! It's wrong still at i " + i  + " j " + j + "on rank " + worldProcRank);
                 }
