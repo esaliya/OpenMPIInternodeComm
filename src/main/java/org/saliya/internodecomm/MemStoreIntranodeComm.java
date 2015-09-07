@@ -5,10 +5,7 @@ import edu.indiana.soic.spidal.common.RangePartitioner;
 import mpi.Intracomm;
 import mpi.MPI;
 import mpi.MPIException;
-import net.openhft.lang.io.ByteBufferBytes;
-import net.openhft.lang.io.Bytes;
-import net.openhft.lang.io.DirectBytes;
-import net.openhft.lang.io.MappedStore;
+import net.openhft.lang.io.*;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -93,7 +90,7 @@ public class MemStoreIntranodeComm {
     public static MappedStore fullXMS;
     public static DirectBytes mmapXReadBytes;
     public static ByteBuffer mmapXReadByteBuffer;
-    public static DirectBytes mmapXWriteBytes;
+    public static NativeBytes mmapXWriteBytes;
     public static DirectBytes fullXBytes;
     public static ByteBuffer fullXByteBuffer;
 
@@ -319,7 +316,8 @@ public class MemStoreIntranodeComm {
         mmapXReadBytes = mmapXMS.bytes(mmapXReadByteOffset, mmapXReadByteExtent);
         mmapXReadByteBuffer = MPI.newByteBuffer(mmapXReadByteExtent);
 
-        mmapXWriteBytes = mmapXMS.bytes(mmapXWriteByteOffset, mmapXWriteByteExtent);
+        mmapXWriteBytes = mmapXReadBytes.slice(mmapXWriteByteOffset,
+                                               mmapXWriteByteExtent);
 
         fullXBytes = fullXMS.bytes(fullXByteOffset, fullXByteExtent);
         fullXByteBuffer = MPI.newByteBuffer(fullXByteExtent);
