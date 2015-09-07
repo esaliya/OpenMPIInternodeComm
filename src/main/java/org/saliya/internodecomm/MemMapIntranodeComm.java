@@ -134,6 +134,7 @@ public class MemMapIntranodeComm {
 
         if (worldProcsCount > 1) {
             mergePartials(partials, targetDimension, mmapXWriteBytes);
+            mmapProcComm.barrier();
             // Check if you get points local to you as is if read by mmapXWriteBytes - This MUST work unless some indexing error with points
             for (int i = procRowStartOffset; i < procRowStartOffset+procRowCount; ++i){
                 for (int j = 0; j < targetDimension; ++j){
@@ -163,8 +164,6 @@ public class MemMapIntranodeComm {
             }
 
 
-            // NO this doesn't work. Putting a thread sleep works means that we have a delay in write propagation. Shit!
-            Thread.sleep(5);
             // Check if what all in your mem group wrote can be read through your reader
             int mmapLeadRowOffset = procRowRanges[mmapLeadWorldRank].getStartIndex();
             for (int i = 0; i < mmapProcsRowCount; ++i){
