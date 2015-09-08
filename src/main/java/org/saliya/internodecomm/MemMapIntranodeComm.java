@@ -365,14 +365,13 @@ public class MemMapIntranodeComm {
                 FileChannel.MapMode.READ_WRITE, mmapXReadByteOffset, mmapXReadByteExtent));
             mmapXReadByteBuffer = mmapXReadBytes.sliceAsByteBuffer(
                 mmapXReadByteBuffer);
-//            mmapXReadByteBuffer = MPI.newByteBuffer(mmapXReadByteExtent);
 
             mmapXReadBytes.position(0);
             mmapXWriteBytes = mmapXReadBytes.slice(mmapXWriteByteOffset, mmapXWriteByteExtent);
 
             fullXBytes = ByteBufferBytes.wrap(fullXFc.map(FileChannel.MapMode.READ_WRITE,
                                                           fullXByteOffset, fullXByteExtent));
-            fullXByteBuffer = MPI.newByteBuffer(fullXByteExtent);
+            fullXByteBuffer = fullXBytes.sliceAsByteBuffer(fullXByteBuffer);
 
             /*lockAndCountBytes = ByteBufferBytes.wrap(lockAndCountFc.map(
                 FileChannel.MapMode.READ_WRITE, 0, LOCK_AND_COUNT_EXTENT));*/
@@ -434,17 +433,14 @@ public class MemMapIntranodeComm {
     }
 
     public static void partialXAllGather() throws MPIException {
-//        mmapXReadByteBuffer.position(0);
-//        mmapXReadBytes.position(0);
-//        mmapXReadBytes.read(mmapXReadByteBuffer);
         fullXByteBuffer.position(0);
         cgProcComm.allGatherv(mmapXReadByteBuffer,
                               cgProcsMmapXByteExtents[cgProcRank], MPI.BYTE,
                               fullXByteBuffer, cgProcsMmapXByteExtents,
                               cgProcsMmapXDisplas, MPI.BYTE);
-        fullXBytes.position(0);
+        /*fullXBytes.position(0);
         fullXByteBuffer.position(0);
-        fullXBytes.write(fullXByteBuffer);
+        fullXBytes.write(fullXByteBuffer);*/
     }
 
     public static void broadcast(DoubleBuffer buffer, int extent, int root)
