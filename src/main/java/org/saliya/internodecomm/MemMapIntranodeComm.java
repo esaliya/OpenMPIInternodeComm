@@ -363,9 +363,9 @@ public class MemMapIntranodeComm {
 
             mmapXReadBytes = ByteBufferBytes.wrap(mmapXFc.map(
                 FileChannel.MapMode.READ_WRITE, mmapXReadByteOffset, mmapXReadByteExtent));
-            /*mmapXReadByteBuffer = mmapXReadBytes.sliceAsByteBuffer(
-                mmapXReadByteBuffer);*/
-            mmapXReadByteBuffer = MPI.newByteBuffer(mmapXReadByteExtent);
+            mmapXReadByteBuffer = mmapXReadBytes.sliceAsByteBuffer(
+                mmapXReadByteBuffer);
+//            mmapXReadByteBuffer = MPI.newByteBuffer(mmapXReadByteExtent);
 
             mmapXReadBytes.position(0);
             mmapXWriteBytes = mmapXReadBytes.slice(mmapXWriteByteOffset, mmapXWriteByteExtent);
@@ -434,9 +434,9 @@ public class MemMapIntranodeComm {
     }
 
     public static void partialXAllGather() throws MPIException {
-        mmapXReadByteBuffer.position(0);
-        mmapXReadBytes.position(0);
-        mmapXReadBytes.read(mmapXReadByteBuffer);
+//        mmapXReadByteBuffer.position(0);
+//        mmapXReadBytes.position(0);
+//        mmapXReadBytes.read(mmapXReadByteBuffer);
         fullXByteBuffer.position(0);
         cgProcComm.allGatherv(mmapXReadByteBuffer,
                               cgProcsMmapXByteExtents[cgProcRank], MPI.BYTE,
