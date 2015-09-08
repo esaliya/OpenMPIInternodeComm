@@ -433,7 +433,7 @@ public class MemMapIntranodeComm {
     }
 
     public static void partialXAllGather() throws MPIException {
-        fullXByteBuffer.position(0);
+//        fullXByteBuffer.position(0);
         cgProcComm.allGatherv(mmapXReadByteBuffer,
                               cgProcsMmapXByteExtents[cgProcRank], MPI.BYTE,
                               fullXByteBuffer, cgProcsMmapXByteExtents,
