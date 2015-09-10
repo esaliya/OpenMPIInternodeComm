@@ -48,18 +48,18 @@ public class MemMapIntranodeComm {
     public static int mmapProcsCount;
     public static boolean isMmapLead;
     public static int[] mmapProcsWorldRanks;
-    public static int mmapLeadWorldRank;
+    public static int mmapLeadCgProcRank;
+    public static int mmapLeadCgProcCount;
+    public static int mmapLeadWorldProcRank;
     public static int mmapLeadWorldRankLocalToNode;
     public static int mmapProcsRowCount;
 
     // mmap leaders form one communicating group and the others (followers)
     // belong to another communicating group.
-    public static Intracomm cgProcComm;
-    public static int cgProcRank;
-    public static int cgProcsCount;
-    public static int[] cgProcsMmapRowCounts;
-    public static int[] cgProcsMmapXByteExtents;
-    public static int[] cgProcsMmapXDisplas;
+    public static Intracomm cgComm;
+    public static int[] mmapLeadsXRowCounts;
+    public static int[] mmapLeadsXByteExtents;
+    public static int[] mmapLeadsXDisplas;
 
     public static String parallelPattern;
     public static Range[] procRowRanges;
@@ -81,16 +81,16 @@ public class MemMapIntranodeComm {
     private static ByteBuffer statBuffer;
     private static DoubleBuffer doubleBuffer;
     private static IntBuffer intBuffer;
+    private static IntBuffer twoIntBuffer;
     static DoubleBuffer partialPointBuffer;
     static DoubleBuffer pointBuffer;
     public static LongBuffer threadsAndMPIBuffer;
     public static LongBuffer mpiOnlyBuffer;
 
-    public static Bytes mmapXReadBytes;
-    public static ByteBuffer mmapXReadByteBuffer;
     public static Bytes mmapXWriteBytes;
     public static Bytes fullXBytes;
-    public static ByteBuffer fullXByteBuffer;
+    public static Bytes[] fullXBytesSlices;
+    public static ByteBuffer[] fullXByteBufferSlices;
 
 
     public static void main(String[] args)
@@ -148,11 +148,17 @@ public class MemMapIntranodeComm {
             }
 
             // Check if what you wrote can be read through your reader
-            int offset = procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex();
+            final Bytes
+                reader =
+                fullXBytesSlices[mmapLeadCgProcRank];
+            int offset = procRowStartOffset - procRowRanges[mmapLeadWorldProcRank].getStartIndex();
             for (int i = procRowStartOffset; i < procRowStartOffset+procRowCount; ++i){
                 for (int j = 0; j < targetDimension; ++j) {
                     double originalValue = preX[i][j];
-                    double writtenValueAsReadByReader = mmapXReadBytes.readDouble((offset+(i-procRowStartOffset))*targetDimension*Double.BYTES + j*Double.BYTES);
+                    double writtenValueAsReadByReader = reader
+                        .readDouble((offset + (i - procRowStartOffset))
+                                    * targetDimension * Double.BYTES
+                                    + j * Double.BYTES);
                     if (originalValue != writtenValueAsReadByReader) {
                         System.out.println(
                             "Rank " + worldProcRank + " testloopNeg1-(" + i +
@@ -165,10 +171,10 @@ public class MemMapIntranodeComm {
 
 
             // Check if what all in your mem group wrote can be read through your reader
-            int mmapLeadRowOffset = procRowRanges[mmapLeadWorldRank].getStartIndex();
+            int mmapLeadRowOffset = procRowRanges[mmapLeadWorldProcRank].getStartIndex();
             for (int i = 0; i < mmapProcsRowCount; ++i){
                 for (int j = 0; j < targetDimension; ++j){
-                    double writtenValue = mmapXReadBytes.readDouble(i*targetDimension*Double.BYTES+j*Double.BYTES);
+                    double writtenValue = reader.readDouble(i*targetDimension*Double.BYTES+j*Double.BYTES);
                     double originalValue = preX[mmapLeadRowOffset+i][j];
                     if (writtenValue != originalValue){
                         System.out.println(
@@ -177,8 +183,8 @@ public class MemMapIntranodeComm {
                 }
             }
 
-            if (isMmapLead) {
-                partialXAllGather();
+            /*if (isMmapLead) {
+                partialXAllGatherLinearRing();
             }
             // Each process in a memory group waits here.
             // It's not necessary to wait for a process
@@ -199,7 +205,8 @@ public class MemMapIntranodeComm {
                     }
                 }
             }
-            return result;
+            return result;*/
+            return  null;
         }else {
             double [][] result = new double[globalColCount][targetDimension];
             mergePartials(partials, targetDimension, result);
@@ -254,25 +261,25 @@ public class MemMapIntranodeComm {
                 : (q * mmapIdLocalToNode + (mmapIdLocalToNode < r
                                                 ? mmapIdLocalToNode
                                                 : r));
-        mmapLeadWorldRank = worldProcRank - (worldProcRankLocalToNode
+        mmapLeadWorldProcRank = worldProcRank - (worldProcRankLocalToNode
                                              - mmapLeadWorldRankLocalToNode);
         for (int i = 0; i < mmapProcsCount; ++i){
-            mmapProcsWorldRanks[i] = mmapLeadWorldRank +i;
+            mmapProcsWorldRanks[i] = mmapLeadWorldProcRank +i;
         }
 
-        // Leaders talk, their color is 0
-        // Followers will get a communicator of color 1,
-        // but will make sure they don't talk ha ha :)
-        cgProcComm = worldProcsComm.split(isMmapLead ? 0 : 1, worldProcRank);
-        cgProcRank = cgProcComm.getRank();
-        cgProcsCount = cgProcComm.getSize();
+        // Create mmap leaders' communicator
+        if (isMmapLead) {
+            cgComm = worldProcsComm.split(0, worldProcRank);
+        }
 
         // Communicator for processes within a  memory map group
         mmapProcComm = worldProcsComm.split((nodeId*mmapsPerNode)+mmapIdLocalToNode, worldProcRank);
 
+
         /* Allocate basic buffers for communication */
         doubleBuffer = MPI.newDoubleBuffer(1);
         intBuffer = MPI.newIntBuffer(1);
+        twoIntBuffer = MPI.newIntBuffer(2);
 
         machineName = MPI.getProcessorName();
 
@@ -313,35 +320,44 @@ public class MemMapIntranodeComm {
         mpiOnlyBuffer = MPI.newLongBuffer(worldProcsCount);
         threadsAndMPIBuffer = MPI.newLongBuffer(worldProcsCount * threadCount);
 
-        cgProcsMmapRowCounts = new int[cgProcsCount];
-        cgProcsMmapXByteExtents = new int[cgProcsCount];
-        cgProcsMmapXDisplas = new int[cgProcsCount];
-        mmapProcsRowCount = IntStream.range(mmapLeadWorldRank,
-                                   mmapLeadWorldRank + mmapProcsCount)
+        twoIntBuffer.put(0, isMmapLead ? cgComm.getRank() : -1);
+        twoIntBuffer.put(1, isMmapLead ? cgComm.getSize() : -1);
+        mmapProcComm.bcast(twoIntBuffer, 2, MPI.INT, 0);
+        mmapLeadCgProcRank = twoIntBuffer.get(0);
+        mmapLeadCgProcCount = twoIntBuffer.get(1);
+
+        mmapProcsRowCount = IntStream.range(mmapLeadWorldProcRank,
+                                   mmapLeadWorldProcRank + mmapProcsCount)
             .map(i -> procRowRanges[i].getLength())
             .sum();
         if (isMmapLead){
-            cgProcsMmapRowCounts[cgProcRank] = mmapProcsRowCount;
-            cgProcComm.allGather(cgProcsMmapRowCounts, 1, MPI.INT);
-            for (int i = 0; i < cgProcsCount; ++i){
-                cgProcsMmapXByteExtents[i] = cgProcsMmapRowCounts[i] * targetDimension * Double.BYTES;
+            mmapLeadsXRowCounts = new int[mmapLeadCgProcCount];
+            mmapLeadsXByteExtents = new int[mmapLeadCgProcCount];
+            mmapLeadsXDisplas = new int[mmapLeadCgProcCount];
+            mmapLeadsXRowCounts[mmapLeadCgProcRank] = mmapProcsRowCount;
+            cgComm.allGather(mmapLeadsXRowCounts, 1, MPI.INT);
+            for (int i = 0; i < mmapLeadCgProcCount; ++i){
+                mmapLeadsXByteExtents[i] = mmapLeadsXRowCounts[i] * targetDimension * Double.BYTES;
             }
 
-            cgProcsMmapXDisplas[0] = 0;
-            System.arraycopy(cgProcsMmapXByteExtents, 0, cgProcsMmapXDisplas, 1, cgProcsCount - 1);
-            Arrays.parallelPrefix(cgProcsMmapXDisplas, (m, n) -> m + n);
+            mmapLeadsXDisplas[0] = 0;
+            System.arraycopy(mmapLeadsXByteExtents, 0, mmapLeadsXDisplas, 1,
+                             mmapLeadCgProcCount - 1);
+            Arrays.parallelPrefix(mmapLeadsXDisplas, (m, n) -> m + n);
         }
+        mmapProcComm.bcast(mmapLeadsXDisplas, mmapLeadCgProcCount, MPI.INT, 0);
 
-        final String mmapXFname = machineName + ".mmapId." + mmapIdLocalToNode + ".mmapX.bin";
+
+        /*final String mmapXFname = machineName + ".mmapId." + mmapIdLocalToNode + ".mmapX.bin";*/
         final String fullXFname = machineName + ".mmapId." + mmapIdLocalToNode +".fullX.bin";
-        final String lockAndCountFname = machineName + ".lockAndCount.bin";
-        try (FileChannel mmapXFc = FileChannel.open(Paths.get(mmapScratchDir,
+        /*final String lockAndCountFname = machineName + ".lockAndCount.bin";*/
+        try (/*FileChannel mmapXFc = FileChannel.open(Paths.get(mmapScratchDir,
                                                                  mmapXFname),
                                                        StandardOpenOption
                                                            .CREATE,
                                                        StandardOpenOption.READ,
                                                        StandardOpenOption
-                                                           .WRITE);
+                                                           .WRITE);*/
             FileChannel fullXFc = FileChannel.open(Paths.get(mmapScratchDir,
                                                              fullXFname),
                                                    StandardOpenOption.CREATE,StandardOpenOption.WRITE,StandardOpenOption.READ);
@@ -354,27 +370,24 @@ public class MemMapIntranodeComm {
                                                           StandardOpenOption.WRITE)*/){
 
 
-            int mmapXReadByteExtent = mmapProcsRowCount * targetDimension * Double.BYTES;
-            long mmapXReadByteOffset = 0L;
             int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
-            long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex()) * targetDimension * Double.BYTES;
+            long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldProcRank].getStartIndex()) * targetDimension * Double.BYTES;
             int fullXByteExtent = globalRowCount * targetDimension * Double.BYTES;
             long fullXByteOffset = 0L;
 
-            mmapXReadBytes = ByteBufferBytes.wrap(mmapXFc.map(
-                FileChannel.MapMode.READ_WRITE, mmapXReadByteOffset, mmapXReadByteExtent));
-            mmapXReadByteBuffer = mmapXReadBytes.sliceAsByteBuffer(
-                mmapXReadByteBuffer);
-
-            mmapXReadBytes.position(0);
-            mmapXWriteBytes = mmapXReadBytes.slice(mmapXWriteByteOffset, mmapXWriteByteExtent);
-
-            fullXBytes = ByteBufferBytes.wrap(fullXFc.map(FileChannel.MapMode.READ_WRITE,
-                                                          fullXByteOffset, fullXByteExtent));
-            fullXByteBuffer = fullXBytes.sliceAsByteBuffer(fullXByteBuffer);
-
-            /*lockAndCountBytes = ByteBufferBytes.wrap(lockAndCountFc.map(
-                FileChannel.MapMode.READ_WRITE, 0, LOCK_AND_COUNT_EXTENT));*/
+            fullXBytes = ByteBufferBytes.wrap(fullXFc.map(
+                FileChannel.MapMode.READ_WRITE, fullXByteOffset,
+                fullXByteExtent));
+            fullXBytesSlices = new Bytes[mmapLeadCgProcCount];
+            fullXByteBufferSlices = new ByteBuffer[mmapLeadCgProcCount];
+            for (int i = 0; i < mmapLeadCgProcCount; ++i){
+                final int offset = mmapLeadsXDisplas[i];
+                int length = (i < (mmapLeadCgProcCount - 1) ? mmapLeadsXDisplas[i+1] : fullXByteExtent) - offset;
+                fullXBytesSlices[i] = fullXBytes.slice(offset, length);
+                fullXByteBufferSlices[i] = fullXBytesSlices[i].sliceAsByteBuffer(fullXByteBufferSlices[i]);
+            }
+            mmapXWriteBytes = fullXBytesSlices[mmapLeadCgProcRank].slice(
+                mmapXWriteByteOffset, mmapXWriteByteExtent);
 
             // Print debug info in order of world ranks
             for (int i = 0; i < worldProcsCount; ++i){
@@ -398,14 +411,12 @@ public class MemMapIntranodeComm {
                             mmapProcsWorldRanks));
                         writer.println("  mmapLeadWorldRankLocalToNode:  "
                                        + "" + mmapLeadWorldRankLocalToNode);
-                        writer.println("  mmapLeadWorldRank:             " + mmapLeadWorldRank);
-                        writer.println("  cgProcRank:                    " + cgProcRank);
-                        writer.println("  cgProcsCount:                  "
-                                       + "" + cgProcsCount);
-                        writer.println("  cgProcsMmapRowCounts:              "
-                                       + Arrays.toString(cgProcsMmapRowCounts));
-                        writer.println("  mmapXReadByteExtent:      "
-                                       + mmapXReadByteExtent);
+                        writer.println("  mmapLeadWorldProcRank:             " + mmapLeadWorldProcRank);
+                        writer.println("  mmapLeadCgProcRank:                    " + mmapLeadCgProcRank);
+                        writer.println("  mmapLeadCgProcCount:                  "
+                                       + "" + mmapLeadCgProcCount);
+                        writer.println("  mmapLeadsXRowCounts:              "
+                                       + Arrays.toString(mmapLeadsXRowCounts));
                         writer.println("  mmapXWriteByteExtent:           "
                                        + mmapXWriteByteExtent);
                         writer.println("  mmapXWriteByteOffset:                "
@@ -432,15 +443,16 @@ public class MemMapIntranodeComm {
         return intBuffer.get(0);
     }
 
-    public static void partialXAllGather() throws MPIException {
-//        fullXByteBuffer.position(0);
-        cgProcComm.allGatherv(mmapXReadByteBuffer,
-                              cgProcsMmapXByteExtents[cgProcRank], MPI.BYTE,
-                              fullXByteBuffer, cgProcsMmapXByteExtents,
-                              cgProcsMmapXDisplas, MPI.BYTE);
-        /*fullXBytes.position(0);
-        fullXByteBuffer.position(0);
-        fullXBytes.write(fullXByteBuffer);*/
+    /*public static void partialXAllGather() throws MPIException {
+        cgComm.allGatherv(mmapXReadByteBuffer,
+                                     mmapLeadsXByteExtents[mmapLeadCgProcRank],
+                                     MPI.BYTE, fullXByteBuffer,
+                                     mmapLeadsXByteExtents,
+                                     mmapLeadsXDisplas, MPI.BYTE);
+    }*/
+
+    public static void partialXAllGatherLinearRing() throws MPIException{
+
     }
 
     public static void broadcast(DoubleBuffer buffer, int extent, int root)

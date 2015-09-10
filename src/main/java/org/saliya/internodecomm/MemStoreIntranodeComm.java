@@ -157,7 +157,7 @@ public class MemStoreIntranodeComm {
             }
         }
 
-        final int startIndex = procRowRanges[mmapLeadWorldRank].getStartIndex();
+        final int startIndex = procRowRanges[mmapLeadWorldProcRank].getStartIndex();
         for (int i = startIndex; i < startIndex+mmapProcsRowCount; ++i){
             for (int j = 0; j < targetDimension; ++j){
                 double original = preX[i][j];
@@ -172,7 +172,7 @@ public class MemStoreIntranodeComm {
        /* int mmapXReadByteExtent = mmapProcsRowCount * targetDimension * Double.BYTES;
         long mmapXReadByteOffset = 0L;
         int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
-        long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldRank].getStartIndex()) * targetDimension * Double.BYTES;
+        long mmapXWriteByteOffset = (procRowStartOffset - procRowRanges[mmapLeadWorldProcRank].getStartIndex()) * targetDimension * Double.BYTES;
 
         final String mmapXFname = machineName + ".mmapId." + mmapIdLocalToNode + ".mmapX.bin";
         *//*try (MappedStore mmapXMS = new MappedStore(new File(mmapScratchDir + File.separator + mmapXFname),
