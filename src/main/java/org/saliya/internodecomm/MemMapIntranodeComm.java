@@ -334,10 +334,10 @@ public class MemMapIntranodeComm {
                                    mmapLeadWorldProcRank + mmapProcsCount)
             .map(i -> procRowRanges[i].getLength())
             .sum();
+        mmapLeadsXRowCounts = new int[mmapLeadCgProcCount];
+        mmapLeadsXByteExtents = new int[mmapLeadCgProcCount];
+        mmapLeadsXDisplas = new int[mmapLeadCgProcCount];
         if (isMmapLead){
-            mmapLeadsXRowCounts = new int[mmapLeadCgProcCount];
-            mmapLeadsXByteExtents = new int[mmapLeadCgProcCount];
-            mmapLeadsXDisplas = new int[mmapLeadCgProcCount];
             mmapLeadsXRowCounts[mmapLeadCgProcRank] = mmapProcsRowCount;
             cgComm.allGather(mmapLeadsXRowCounts, 1, MPI.INT);
             for (int i = 0; i < mmapLeadCgProcCount; ++i){
@@ -349,8 +349,8 @@ public class MemMapIntranodeComm {
                              mmapLeadCgProcCount - 1);
             Arrays.parallelPrefix(mmapLeadsXDisplas, (m, n) -> m + n);
         }
-        /*
-        mmapProcComm.bcast(mmapLeadsXDisplas, mmapLeadCgProcCount, MPI.INT, 0);*/
+
+        mmapProcComm.bcast(mmapLeadsXDisplas, mmapLeadCgProcCount, MPI.INT, 0);
 
 
         /*final String fullXFname = machineName + ".mmapId." + mmapIdLocalToNode +".fullX.bin";
