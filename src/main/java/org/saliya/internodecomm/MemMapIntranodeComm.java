@@ -322,13 +322,14 @@ public class MemMapIntranodeComm {
         pointBuffer = MPI.newDoubleBuffer(globalRowCount * targetDimension);
         mpiOnlyBuffer = MPI.newLongBuffer(worldProcsCount);
         threadsAndMPIBuffer = MPI.newLongBuffer(worldProcsCount * threadCount);
-/*
+
         twoIntBuffer.put(0, isMmapLead ? cgComm.getRank() : -1);
         twoIntBuffer.put(1, isMmapLead ? cgComm.getSize() : -1);
         mmapProcComm.bcast(twoIntBuffer, 2, MPI.INT, 0);
         mmapLeadCgProcRank = twoIntBuffer.get(0);
         mmapLeadCgProcCount = twoIntBuffer.get(1);
 
+        /*
         mmapProcsRowCount = IntStream.range(mmapLeadWorldProcRank,
                                    mmapLeadWorldProcRank + mmapProcsCount)
             .map(i -> procRowRanges[i].getLength())
