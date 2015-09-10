@@ -268,8 +268,9 @@ public class MemMapIntranodeComm {
         }
 
         // Create mmap leaders' communicator
-        if (isMmapLead) {
-            cgComm = worldProcsComm.split(0, worldProcRank);
+        cgComm = worldProcsComm.split(isMmapLead ? 0 : 1, worldProcRank);
+        if (!isMmapLead){
+            cgComm = null;
         }
 
         // Communicator for processes within a  memory map group
