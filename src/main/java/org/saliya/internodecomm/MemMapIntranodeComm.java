@@ -353,24 +353,12 @@ public class MemMapIntranodeComm {
         mmapProcComm.bcast(mmapLeadsXDisplas, mmapLeadCgProcCount, MPI.INT, 0);
 
 
-        /*final String fullXFname = machineName + ".mmapId." + mmapIdLocalToNode +".fullX.bin";
-        try (*//*FileChannel mmapXFc = FileChannel.open(Paths.get(mmapScratchDir,
-                                                                 mmapXFname),
-                                                       StandardOpenOption
-                                                           .CREATE,
-                                                       StandardOpenOption.READ,
-                                                       StandardOpenOption
-                                                           .WRITE);*//*
+        final String fullXFname = machineName + ".mmapId." + mmapIdLocalToNode +".fullX.bin";
+        try (
             FileChannel fullXFc = FileChannel.open(Paths.get(mmapScratchDir,
                                                              fullXFname),
                                                    StandardOpenOption.CREATE,StandardOpenOption.WRITE,StandardOpenOption.READ);
-            *//*FileChannel lockAndCountFc = FileChannel.open(Paths.get(
-                                                              mmapScratchDir,
-                                                              lockAndCountFname),
-                                                          StandardOpenOption
-                                                              .CREATE,
-                                                          StandardOpenOption.READ,
-                                                          StandardOpenOption.WRITE)*//*){
+            ){
 
 
             int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
@@ -431,7 +419,7 @@ public class MemMapIntranodeComm {
                     }
                 }
             }
-        }*/
+        }
     }
 
     public static double allReduce(double value) throws MPIException{
