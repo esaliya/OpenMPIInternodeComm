@@ -107,8 +107,8 @@ public class MemMapIntranodeComm {
 
         setupParallelism();
         System.out.println("Rank " + worldProcRank + " Done setup");
-//        setParallelDecomposition(numberDataPoints, targetDimension);
-//        System.out.println("Rank " + worldProcRank + " Done decomposing");
+        setParallelDecomposition(numberDataPoints, targetDimension);
+        System.out.println("Rank " + worldProcRank + " Done decomposing");
 //        double[][] preX = generateInitMapping(numberDataPoints,
 //                                              targetDimension);
 //        double[][] X = calculateNothing(preX, targetDimension);
@@ -351,26 +351,24 @@ public class MemMapIntranodeComm {
         mmapProcComm.bcast(mmapLeadsXDisplas, mmapLeadCgProcCount, MPI.INT, 0);
 
 
-        /*final String mmapXFname = machineName + ".mmapId." + mmapIdLocalToNode + ".mmapX.bin";*/
-        final String fullXFname = machineName + ".mmapId." + mmapIdLocalToNode +".fullX.bin";
-        /*final String lockAndCountFname = machineName + ".lockAndCount.bin";*/
-        try (/*FileChannel mmapXFc = FileChannel.open(Paths.get(mmapScratchDir,
+        /*final String fullXFname = machineName + ".mmapId." + mmapIdLocalToNode +".fullX.bin";
+        try (*//*FileChannel mmapXFc = FileChannel.open(Paths.get(mmapScratchDir,
                                                                  mmapXFname),
                                                        StandardOpenOption
                                                            .CREATE,
                                                        StandardOpenOption.READ,
                                                        StandardOpenOption
-                                                           .WRITE);*/
+                                                           .WRITE);*//*
             FileChannel fullXFc = FileChannel.open(Paths.get(mmapScratchDir,
                                                              fullXFname),
                                                    StandardOpenOption.CREATE,StandardOpenOption.WRITE,StandardOpenOption.READ);
-            /*FileChannel lockAndCountFc = FileChannel.open(Paths.get(
+            *//*FileChannel lockAndCountFc = FileChannel.open(Paths.get(
                                                               mmapScratchDir,
                                                               lockAndCountFname),
                                                           StandardOpenOption
                                                               .CREATE,
                                                           StandardOpenOption.READ,
-                                                          StandardOpenOption.WRITE)*/){
+                                                          StandardOpenOption.WRITE)*//*){
 
 
             int mmapXWriteByteExtent = procRowCount * targetDimension * Double.BYTES;
@@ -431,7 +429,7 @@ public class MemMapIntranodeComm {
                     }
                 }
             }
-        }
+        }*/
     }
 
     public static double allReduce(double value) throws MPIException{
