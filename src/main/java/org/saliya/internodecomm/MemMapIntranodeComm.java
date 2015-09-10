@@ -329,7 +329,7 @@ public class MemMapIntranodeComm {
         mmapLeadCgProcRank = twoIntBuffer.get(0);
         mmapLeadCgProcCount = twoIntBuffer.get(1);
 
-        /*
+
         mmapProcsRowCount = IntStream.range(mmapLeadWorldProcRank,
                                    mmapLeadWorldProcRank + mmapProcsCount)
             .map(i -> procRowRanges[i].getLength())
@@ -349,6 +349,7 @@ public class MemMapIntranodeComm {
                              mmapLeadCgProcCount - 1);
             Arrays.parallelPrefix(mmapLeadsXDisplas, (m, n) -> m + n);
         }
+        /*
         mmapProcComm.bcast(mmapLeadsXDisplas, mmapLeadCgProcCount, MPI.INT, 0);*/
 
 
