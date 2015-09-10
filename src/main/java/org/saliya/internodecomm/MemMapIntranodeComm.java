@@ -322,7 +322,7 @@ public class MemMapIntranodeComm {
         pointBuffer = MPI.newDoubleBuffer(globalRowCount * targetDimension);
         mpiOnlyBuffer = MPI.newLongBuffer(worldProcsCount);
         threadsAndMPIBuffer = MPI.newLongBuffer(worldProcsCount * threadCount);
-
+/*
         twoIntBuffer.put(0, isMmapLead ? cgComm.getRank() : -1);
         twoIntBuffer.put(1, isMmapLead ? cgComm.getSize() : -1);
         mmapProcComm.bcast(twoIntBuffer, 2, MPI.INT, 0);
@@ -348,7 +348,7 @@ public class MemMapIntranodeComm {
                              mmapLeadCgProcCount - 1);
             Arrays.parallelPrefix(mmapLeadsXDisplas, (m, n) -> m + n);
         }
-        mmapProcComm.bcast(mmapLeadsXDisplas, mmapLeadCgProcCount, MPI.INT, 0);
+        mmapProcComm.bcast(mmapLeadsXDisplas, mmapLeadCgProcCount, MPI.INT, 0);*/
 
 
         /*final String fullXFname = machineName + ".mmapId." + mmapIdLocalToNode +".fullX.bin";
