@@ -106,11 +106,12 @@ public class MemMapIntranodeComm {
         int targetDimension = Integer.parseInt(args[5]);
 
         setupParallelism();
-        setParallelDecomposition(numberDataPoints, targetDimension);
-        System.out.println("Rank " + worldProcRank + " Done decomposing");
-        double[][] preX = generateInitMapping(numberDataPoints,
-                                              targetDimension);
-        double[][] X = calculateNothing(preX, targetDimension);
+        System.out.println("Rank " + worldProcRank + " Done setup");
+//        setParallelDecomposition(numberDataPoints, targetDimension);
+//        System.out.println("Rank " + worldProcRank + " Done decomposing");
+//        double[][] preX = generateInitMapping(numberDataPoints,
+//                                              targetDimension);
+//        double[][] X = calculateNothing(preX, targetDimension);
 
         MPI.Finalize();
     }
