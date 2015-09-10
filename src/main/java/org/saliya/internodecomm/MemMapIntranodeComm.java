@@ -107,6 +107,7 @@ public class MemMapIntranodeComm {
 
         setupParallelism();
         setParallelDecomposition(numberDataPoints, targetDimension);
+        System.out.println("Rank " + worldProcRank + " Done decomposing");
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
         double[][] X = calculateNothing(preX, targetDimension);
