@@ -51,12 +51,12 @@ public class MemMapIntranodeComm {
     public static int mmapLeadCgProcRank;
     public static int mmapLeadCgProcCount;
     public static int mmapLeadWorldProcRank;
-    public static int mmapLeadWorldRankLocalToNode;
+    public static int mmapLeadWorldProcRankLocalToNode;
     public static int mmapProcsRowCount;
 
     // mmap leaders form one communicating group and the others (followers)
     // belong to another communicating group.
-    public static Intracomm cgComm;
+    public static Intracomm cgProcComm;
     public static int[] mmapLeadsXRowCounts;
     public static int[] mmapLeadsXByteExtents;
     public static int[] mmapLeadsXDisplas;
@@ -256,22 +256,22 @@ public class MemMapIntranodeComm {
         mmapProcsCount = worldProcRankLocalToNode < r*(q+1) ? q+1 : q;
         isMmapLead = worldProcRankLocalToNode % mmapProcsCount == 0;
         mmapProcsWorldRanks = new int[mmapProcsCount];
-        mmapLeadWorldRankLocalToNode =
+        mmapLeadWorldProcRankLocalToNode =
             isMmapLead
                 ? worldProcRankLocalToNode
                 : (q * mmapIdLocalToNode + (mmapIdLocalToNode < r
                                                 ? mmapIdLocalToNode
                                                 : r));
         mmapLeadWorldProcRank = worldProcRank - (worldProcRankLocalToNode
-                                             - mmapLeadWorldRankLocalToNode);
+                                             - mmapLeadWorldProcRankLocalToNode);
         for (int i = 0; i < mmapProcsCount; ++i){
             mmapProcsWorldRanks[i] = mmapLeadWorldProcRank +i;
         }
 
         // Create mmap leaders' communicator
-        cgComm = worldProcsComm.split(isMmapLead ? 0 : 1, worldProcRank);
+        cgProcComm = worldProcsComm.split(isMmapLead ? 0 : 1, worldProcRank);
         if (!isMmapLead){
-            cgComm = null;
+            cgProcComm = null;
         }
 
         // Communicator for processes within a  memory map group
@@ -322,8 +322,8 @@ public class MemMapIntranodeComm {
         mpiOnlyBuffer = MPI.newLongBuffer(worldProcsCount);
         threadsAndMPIBuffer = MPI.newLongBuffer(worldProcsCount * threadCount);
 
-        twoIntBuffer.put(0, isMmapLead ? cgComm.getRank() : -1);
-        twoIntBuffer.put(1, isMmapLead ? cgComm.getSize() : -1);
+        twoIntBuffer.put(0, isMmapLead ? cgProcComm.getRank() : -1);
+        twoIntBuffer.put(1, isMmapLead ? cgProcComm.getSize() : -1);
         mmapProcComm.bcast(twoIntBuffer, 2, MPI.INT, 0);
         mmapLeadCgProcRank = twoIntBuffer.get(0);
         mmapLeadCgProcCount = twoIntBuffer.get(1);
@@ -338,7 +338,7 @@ public class MemMapIntranodeComm {
         mmapLeadsXDisplas = new int[mmapLeadCgProcCount];
         if (isMmapLead){
             mmapLeadsXRowCounts[mmapLeadCgProcRank] = mmapProcsRowCount;
-            cgComm.allGather(mmapLeadsXRowCounts, 1, MPI.INT);
+            cgProcComm.allGather(mmapLeadsXRowCounts, 1, MPI.INT);
             for (int i = 0; i < mmapLeadCgProcCount; ++i){
                 mmapLeadsXByteExtents[i] = mmapLeadsXRowCounts[i] * targetDimension * Double.BYTES;
             }
@@ -399,8 +399,8 @@ public class MemMapIntranodeComm {
                         writer.println("  isMmapLead:                    " + isMmapLead);
                         writer.println("  mmapProcsWorldRanks:           " + Arrays.toString(
                             mmapProcsWorldRanks));
-                        writer.println("  mmapLeadWorldRankLocalToNode:  "
-                                       + "" + mmapLeadWorldRankLocalToNode);
+                        writer.println("  mmapLeadWorldProcRankLocalToNode:  "
+                                       + "" + mmapLeadWorldProcRankLocalToNode);
                         writer.println("  mmapLeadWorldProcRank:             " + mmapLeadWorldProcRank);
                         writer.println("  mmapLeadCgProcRank:                    " + mmapLeadCgProcRank);
                         writer.println("  mmapLeadCgProcCount:                  "
@@ -434,7 +434,7 @@ public class MemMapIntranodeComm {
     }
 
     /*public static void partialXAllGather() throws MPIException {
-        cgComm.allGatherv(mmapXReadByteBuffer,
+        cgProcComm.allGatherv(mmapXReadByteBuffer,
                                      mmapLeadsXByteExtents[mmapLeadCgProcRank],
                                      MPI.BYTE, fullXByteBuffer,
                                      mmapLeadsXByteExtents,
@@ -448,7 +448,7 @@ public class MemMapIntranodeComm {
         int recvFullXSliceIdx = recvFromRank;
         int sendFullXSliceIdx = mmapLeadCgProcRank;
         for (int i = 0; i < mmapLeadsSub1; ++i){
-            cgComm.sendRecv(fullXByteBufferSlices[sendFullXSliceIdx],
+            cgProcComm.sendRecv(fullXByteBufferSlices[sendFullXSliceIdx],
                             mmapLeadsXByteExtents[sendFullXSliceIdx], MPI.BYTE,
                             sendToRank, sendToRank,
                             fullXByteBufferSlices[recvFullXSliceIdx],
