@@ -344,13 +344,13 @@ public class MemMapIntranodeComm {
                 mmapLeadsXByteExtents[i] = mmapLeadsXRowCounts[i] * targetDimension * Double.BYTES;
             }
 
-            mmapLeadsXDisplas[0] = 0;
-            System.arraycopy(mmapLeadsXByteExtents, 0, mmapLeadsXDisplas, 1,
-                             mmapLeadCgProcCount - 1);
-            Arrays.parallelPrefix(mmapLeadsXDisplas, (m, n) -> m + n);
-        }
 
-        mmapProcComm.bcast(mmapLeadsXDisplas, mmapLeadCgProcCount, MPI.INT, 0);
+        }
+        mmapProcComm.bcast(mmapLeadsXByteExtents, mmapLeadCgProcCount, MPI.INT, 0);
+        mmapLeadsXDisplas[0] = 0;
+        System.arraycopy(mmapLeadsXByteExtents, 0, mmapLeadsXDisplas, 1,
+                         mmapLeadCgProcCount - 1);
+        Arrays.parallelPrefix(mmapLeadsXDisplas, (m, n) -> m + n);
 
 
         final String fullXFname = machineName + ".mmapId." + mmapIdLocalToNode +".fullX.bin";
@@ -373,7 +373,8 @@ public class MemMapIntranodeComm {
             fullXByteBufferSlices = new ByteBuffer[mmapLeadCgProcCount];
             for (int i = 0; i < mmapLeadCgProcCount; ++i){
                 final int offset = mmapLeadsXDisplas[i];
-                int length = (i < (mmapLeadCgProcCount - 1) ? mmapLeadsXDisplas[i+1] : fullXByteExtent) - offset;
+//                int length = (i < (mmapLeadCgProcCount - 1) ? mmapLeadsXDisplas[i+1] : fullXByteExtent) - offset;
+                int length = mmapLeadsXByteExtents[i];
                 fullXBytesSlices[i] = fullXBytes.slice(offset, length);
                 fullXByteBufferSlices[i] = fullXBytesSlices[i].sliceAsByteBuffer(fullXByteBufferSlices[i]);
             }
@@ -443,7 +444,14 @@ public class MemMapIntranodeComm {
     }*/
 
     public static void partialXAllGatherLinearRing() throws MPIException{
+        int recvFromRank = (mmapLeadCgProcRank + (mmapLeadCgProcCount - 1)) % mmapLeadCgProcCount;
+        int sendToRank = (mmapLeadCgProcRank+1)% mmapLeadCgProcCount;
+        int recvFullXSliceIdx = recvFromRank;
+        int sendFullXSliceIdx = mmapLeadCgProcRank;
+       /* for (int i = 0; i < mmapLeadCgProcCount - 1; ++i){
 
+            cgComm.sendRecv(fullXByteBufferSlices[sendFullXSliceIdx], )
+        }*/
     }
 
     public static void broadcast(DoubleBuffer buffer, int extent, int root)
