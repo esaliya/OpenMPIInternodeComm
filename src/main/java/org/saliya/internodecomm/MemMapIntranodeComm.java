@@ -185,7 +185,7 @@ public class MemMapIntranodeComm {
                 }
             }
 
-            /*if (isMmapLead) {
+            if (isMmapLead) {
                 partialXAllGatherLinearRing();
             }
             // Each process in a memory group waits here.
@@ -207,8 +207,7 @@ public class MemMapIntranodeComm {
                     }
                 }
             }
-            return result;*/
-            return  null;
+            return result;
         }else {
             double [][] result = new double[globalColCount][targetDimension];
             mergePartials(partials, targetDimension, result);
@@ -373,7 +372,6 @@ public class MemMapIntranodeComm {
             fullXByteBufferSlices = new ByteBuffer[mmapLeadCgProcCount];
             for (int i = 0; i < mmapLeadCgProcCount; ++i){
                 final int offset = mmapLeadsXDisplas[i];
-//                int length = (i < (mmapLeadCgProcCount - 1) ? mmapLeadsXDisplas[i+1] : fullXByteExtent) - offset;
                 int length = mmapLeadsXByteExtents[i];
                 fullXBytesSlices[i] = fullXBytes.slice(offset, length);
                 fullXByteBufferSlices[i] = fullXBytesSlices[i].sliceAsByteBuffer(fullXByteBufferSlices[i]);
@@ -444,14 +442,21 @@ public class MemMapIntranodeComm {
     }*/
 
     public static void partialXAllGatherLinearRing() throws MPIException{
-        int recvFromRank = (mmapLeadCgProcRank + (mmapLeadCgProcCount - 1)) % mmapLeadCgProcCount;
+        final int mmapLeadsSub1 = mmapLeadCgProcCount - 1;
+        int recvFromRank = (mmapLeadCgProcRank + mmapLeadsSub1) % mmapLeadCgProcCount;
         int sendToRank = (mmapLeadCgProcRank+1)% mmapLeadCgProcCount;
         int recvFullXSliceIdx = recvFromRank;
         int sendFullXSliceIdx = mmapLeadCgProcRank;
-       /* for (int i = 0; i < mmapLeadCgProcCount - 1; ++i){
-
-            cgComm.sendRecv(fullXByteBufferSlices[sendFullXSliceIdx], )
-        }*/
+        for (int i = 0; i < mmapLeadsSub1; ++i){
+            cgComm.sendRecv(fullXByteBufferSlices[sendFullXSliceIdx],
+                            mmapLeadsXByteExtents[sendFullXSliceIdx], MPI.BYTE,
+                            sendToRank, sendToRank,
+                            fullXByteBufferSlices[recvFullXSliceIdx],
+                            mmapLeadsXByteExtents[recvFullXSliceIdx],
+                            MPI.DOUBLE, recvFromRank, mmapLeadCgProcRank);
+            sendFullXSliceIdx = recvFullXSliceIdx;
+            recvFullXSliceIdx = (recvFullXSliceIdx + mmapLeadsSub1) % mmapLeadCgProcCount;
+        }
     }
 
     public static void broadcast(DoubleBuffer buffer, int extent, int root)
