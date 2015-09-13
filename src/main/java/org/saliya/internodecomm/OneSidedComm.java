@@ -41,12 +41,13 @@ public class OneSidedComm {
 
 
             for (int i = 0; i < myRange.getLength(); ++i){
-                bytes.writeDouble((myRange.getStartIndex()+i)*Double.BYTES, worldProcRank);
+                bytes.writeDouble((myRange.getStartIndex() + i) * Double.BYTES,
+                                  worldProcRank);
             }
             worldProcComm.barrier();
             win.fence(0);
             if (worldProcRank != 0){
-                win.put(byteBuffer, size, MPI.DOUBLE, 0, myRange.getStartIndex(), myRange.getLength(), MPI.DOUBLE);
+                win.put(byteBuffer, extent, MPI.BYTE, 0, myRange.getStartIndex()*Double.BYTES, myRange.getLength()* Double.BYTES, MPI.BYTE);
             }
             win.fence(0);
             win.free();
@@ -54,7 +55,7 @@ public class OneSidedComm {
             worldProcComm.barrier();
             if (worldProcRank == 0){
                 for (int i = 0; i < size; ++i) {
-                    System.out.println(bytes.readDouble(i*Double.BYTES));
+                    System.out.println(bytes.readDouble(i * Double.BYTES));
                 }
             }
             worldProcComm.barrier();
