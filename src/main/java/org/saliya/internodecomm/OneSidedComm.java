@@ -41,11 +41,9 @@ public class OneSidedComm {
             byteSlice = bytes.slice(myRange.getStartIndex()*Double.BYTES, myRange.getLength()*Double.BYTES);
             byteBufferSlice = byteSlice.sliceAsByteBuffer(byteBufferSlice);
 
-            //            byteBuffer = MPI.newByteBuffer(extent);
             Win win = new Win(byteBuffer, extent, Double.BYTES, MPI.INFO_NULL, worldProcComm);
 
             for (int i = 0; i < myRange.getLength(); ++i){
-//                byteBuffer.putDouble(i*Double.BYTES, worldProcRank);
                 byteSlice.writeDouble(i*Double.BYTES, worldProcRank);
             }
             win.fence(0);
@@ -57,7 +55,6 @@ public class OneSidedComm {
             worldProcComm.barrier();
             if (worldProcRank == 0){
                 for (int i = 0; i < size; ++i) {
-//                    System.out.println(byteBuffer.getDouble(i*Double.BYTES));
                     System.out.println(bytes.readDouble(i*Double.BYTES));
                 }
             }
