@@ -53,7 +53,7 @@ public class OneSidedComm {
             worldProcComm.barrier();
             if (worldProcRank == 0){
                 for (int i = 0; i < size; ++i) {
-                    System.out.println(byteBuffer.getDouble(i*Double.BYTES));
+                    System.out.println(bytes.readDouble(i*Double.BYTES));
                 }
             }
             worldProcComm.barrier();
