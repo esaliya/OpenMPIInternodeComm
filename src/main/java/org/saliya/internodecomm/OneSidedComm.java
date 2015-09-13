@@ -42,7 +42,7 @@ public class OneSidedComm {
             Win win = new Win(byteBuffer, extent, Double.BYTES, MPI.INFO_NULL, worldProcComm);
 
             for (int i = 0; i < myRange.getLength(); ++i){
-                bytes.writeDouble(i*Double.BYTES, worldProcRank);
+                byteBuffer.putDouble(i*Double.BYTES, worldProcRank);
             }
             win.fence(0);
             if (worldProcRank != 0){
