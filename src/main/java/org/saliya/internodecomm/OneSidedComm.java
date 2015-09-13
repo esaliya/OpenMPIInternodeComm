@@ -43,7 +43,7 @@ public class OneSidedComm {
             for (int i = 0; i < myRange.getLength(); ++i){
                 /*bytes.writeDouble((myRange.getStartIndex() + i) * Double.BYTES,
                                   worldProcRank);*/
-                byteBuffer.putDouble(i+myRange.getStartIndex(),
+                byteBuffer.putDouble((i+myRange.getStartIndex())*Double.BYTES,
                                   worldProcRank);
             }
             worldProcComm.barrier();
@@ -58,7 +58,7 @@ public class OneSidedComm {
             if (worldProcRank == 0){
                 for (int i = 0; i < size; ++i) {
 //                    System.out.println(bytes.readDouble(i * Double.BYTES));
-                    System.out.println(byteBuffer.getDouble(i));
+                    System.out.println(byteBuffer.getDouble(i*Double.BYTES));
                 }
             }
             worldProcComm.barrier();
