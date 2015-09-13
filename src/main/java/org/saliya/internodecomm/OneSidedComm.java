@@ -35,17 +35,17 @@ public class OneSidedComm {
             bytes = ByteBufferBytes.wrap(fc.map(
                 FileChannel.MapMode.READ_WRITE, 0L,
                 extent));
-//            byteBuffer = bytes.sliceAsByteBuffer(byteBuffer);
-            byteBuffer = MPI.newByteBuffer(extent);
+            byteBuffer = bytes.sliceAsByteBuffer(byteBuffer);
+
+
             Win win = new Win(byteBuffer, extent, Double.BYTES, MPI.INFO_NULL, worldProcComm);
 
-
             for (int i = 0; i < myRange.getLength(); ++i){
-                byteBuffer.putDouble(i*Double.BYTES, worldProcRank);
+                bytes.writeDouble(i*Double.BYTES, worldProcRank);
             }
             win.fence(0);
             if (worldProcRank != 0){
-                win.put(byteBuffer, size, MPI.DOUBLE, 0, myRange.getStartIndex(), myRange.getLength(), MPI.DOUBLE);
+                win.put(byteBuffer, myRange.getLength(), MPI.DOUBLE, 0, myRange.getStartIndex(), myRange.getLength(), MPI.DOUBLE);
             }
             win.fence(0);
             win.free();
@@ -53,7 +53,7 @@ public class OneSidedComm {
             worldProcComm.barrier();
             if (worldProcRank == 0){
                 for (int i = 0; i < size; ++i) {
-                    System.out.println(byteBuffer.getDouble(i*Double.BYTES));
+                    System.out.println(bytes.readDouble(i*Double.BYTES));
                 }
             }
             worldProcComm.barrier();
