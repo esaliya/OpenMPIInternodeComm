@@ -52,15 +52,16 @@ public class OneSidedComm {
                 win.put(byteBuffer, size, MPI.DOUBLE, 0, myRange.getStartIndex(), myRange.getLength(), MPI.DOUBLE);
             }
             win.fence(0);
-            win.free();
+
 
             worldProcComm.barrier();
             if (worldProcRank == 0){
                 for (int i = 0; i < size; ++i) {
 //                    System.out.println(bytes.readDouble(i * Double.BYTES));
-                    System.out.println(byteBuffer.getDouble(i*Double.BYTES));
+                    System.out.println(byteBuffer.getDouble(i * Double.BYTES));
                 }
             }
+            win.free();
             worldProcComm.barrier();
         }
         catch (IOException e) {
