@@ -49,7 +49,7 @@ public class OneSidedComm {
             worldProcComm.barrier();
             win.fence(0);
             if (worldProcRank != 0){
-                win.put(byteBuffer, extent, MPI.BYTE, 0, myRange.getStartIndex()*Double.BYTES, myRange.getLength()* Double.BYTES, MPI.BYTE);
+                win.put(byteBuffer, size, MPI.DOUBLE, 0, myRange.getStartIndex(), myRange.getLength(), MPI.DOUBLE);
             }
             win.fence(0);
             win.free();
