@@ -41,7 +41,7 @@ public class OneSidedComm {
 
 
             for (int i = 0; i < myRange.getLength(); ++i){
-                bytes.writeDouble(i*Double.BYTES, worldProcRank);
+                bytes.writeDouble((myRange.getStartIndex()+i)*Double.BYTES, worldProcRank);
             }
             worldProcComm.barrier();
             win.fence(0);
