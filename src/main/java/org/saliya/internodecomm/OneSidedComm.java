@@ -37,24 +37,22 @@ public class OneSidedComm {
                 extent));
 //            byteBuffer = bytes.sliceAsByteBuffer(byteBuffer);
             byteBuffer = MPI.newByteBuffer(extent);
-
-
             Win win = new Win(byteBuffer, extent, Double.BYTES, MPI.INFO_NULL, worldProcComm);
+
 
             for (int i = 0; i < myRange.getLength(); ++i){
                 byteBuffer.putDouble(i*Double.BYTES, worldProcRank);
             }
             win.fence(0);
             if (worldProcRank != 0){
-                win.put(byteBuffer, myRange.getLength(), MPI.DOUBLE, 0, myRange.getStartIndex(), myRange.getLength(), MPI.DOUBLE);
+                win.put(byteBuffer, size, MPI.DOUBLE, 0, myRange.getStartIndex(), myRange.getLength(), MPI.DOUBLE);
             }
             win.fence(0);
-            win.free();
 
             worldProcComm.barrier();
             if (worldProcRank == 0){
                 for (int i = 0; i < size; ++i) {
-                    System.out.println(byteBuffer.get(i*Double.BYTES));
+                    System.out.println(byteBuffer.getDouble(i*Double.BYTES));
                 }
             }
             worldProcComm.barrier();
