@@ -35,7 +35,8 @@ public class OneSidedComm {
             bytes = ByteBufferBytes.wrap(fc.map(
                 FileChannel.MapMode.READ_WRITE, 0L,
                 extent));
-            byteBuffer = bytes.sliceAsByteBuffer(byteBuffer);
+//            byteBuffer = bytes.sliceAsByteBuffer(byteBuffer);
+            byteBuffer = MPI.newByteBuffer(extent);
 
 
             Win win = new Win(byteBuffer, extent, Double.BYTES, MPI.INFO_NULL, worldProcComm);
@@ -53,7 +54,7 @@ public class OneSidedComm {
             worldProcComm.barrier();
             if (worldProcRank == 0){
                 for (int i = 0; i < size; ++i) {
-                    System.out.println(bytes.readDouble(i*Double.BYTES));
+                    System.out.println(byteBuffer.get(i*Double.BYTES));
                 }
             }
             worldProcComm.barrier();
