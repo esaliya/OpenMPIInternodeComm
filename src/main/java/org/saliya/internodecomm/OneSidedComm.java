@@ -43,7 +43,7 @@ public class OneSidedComm {
             for (int i = 0; i < myRange.getLength(); ++i){
                 /*bytes.writeDouble((myRange.getStartIndex() + i) * Double.BYTES,
                                   worldProcRank);*/
-                byteBuffer.putDouble(i,
+                byteBuffer.putDouble(i+myRange.getStartIndex(),
                                   worldProcRank);
             }
             worldProcComm.barrier();
