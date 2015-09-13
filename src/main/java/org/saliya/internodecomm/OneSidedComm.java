@@ -48,6 +48,7 @@ public class OneSidedComm {
                 win.put(byteBuffer, size, MPI.DOUBLE, 0, myRange.getStartIndex(), myRange.getLength(), MPI.DOUBLE);
             }
             win.fence(0);
+            win.free();
 
             worldProcComm.barrier();
             if (worldProcRank == 0){
