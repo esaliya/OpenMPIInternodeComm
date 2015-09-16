@@ -1,5 +1,6 @@
 package org.saliya.internodecomm;
 
+import com.google.common.base.Stopwatch;
 import edu.indiana.soic.spidal.common.Range;
 import edu.indiana.soic.spidal.common.RangePartitioner;
 import mpi.Intracomm;
@@ -21,8 +22,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import static edu.rice.hj.Module0.dumpEventLog;
 import static edu.rice.hj.Module0.launchHabaneroApp;
 import static edu.rice.hj.Module1.forallChunked;
 
@@ -112,6 +115,8 @@ public class MemMapIntranodeComm {
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
         double[][] X = calculateNothing(preX, targetDimension);
+        // This was necessary in full DAMDS when using just one mmap file to prevent ranks from leaking to a next step
+        worldProcsComm.barrier();
 
         MPI.Finalize();
     }
@@ -196,9 +201,16 @@ public class MemMapIntranodeComm {
             // TODO - a test to see if we assume writes are all good then this read should be good
             // because it's reading the buffer returned by MPI allgather.
             // OK it's a FAILURE, so writing may not be good.
+
+            // Also get some clean timing of the extract points function
+            worldProcsComm.barrier();
+            Stopwatch timer = Stopwatch.createStarted();
             double[][] result = extractPoints(
                 fullXBytes, globalColCount,
                 targetDimension);
+            timer.stop();
+            long t = timer.elapsed(TimeUnit.MILLISECONDS);
+            System.out.println("Rank: " + worldProcRank + " time to extract " + globalColCount + " x " + targetDimension + " points took " + t  +" ms");
             for (int i = 0; i < result.length; ++i) {
                 for (int j = 0; j < targetDimension; ++j) {
                     if (preX[i][j] != result[i][j]) {
