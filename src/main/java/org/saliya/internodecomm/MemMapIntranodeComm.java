@@ -109,14 +109,17 @@ public class MemMapIntranodeComm {
         int targetDimension = Integer.parseInt(args[5]);
 
         setupParallelism();
-        System.out.println("Rank " + worldProcRank + " Done setup");
+//        System.out.println("Rank " + worldProcRank + " Done setup");
         setParallelDecomposition(numberDataPoints, targetDimension);
-        System.out.println("Rank " + worldProcRank + " Done decomposing");
+//        System.out.println("Rank " + worldProcRank + " Done decomposing");
         double[][] preX = generateInitMapping(numberDataPoints,
                                               targetDimension);
-        double[][] X = calculateNothing(preX, targetDimension);
-        // This was necessary in full DAMDS when using just one mmap file to prevent ranks from leaking to a next step
-        worldProcsComm.barrier();
+        for (int i = 0; i < 100; ++i) {
+            double[][] X = calculateNothing(preX, targetDimension);
+            // This was necessary in full DAMDS when using just one mmap file to prevent ranks from leaking to a next step
+
+            worldProcsComm.barrier();
+        }
 
         MPI.Finalize();
     }
@@ -245,7 +248,7 @@ public class MemMapIntranodeComm {
         }
         try {
             final long millis = (long) (930 + (Math.random()*100));
-            System.out.println("Rank " + MPI.COMM_WORLD.getRank() + " sleeping " + millis + " s");
+//            System.out.println("Rank " + MPI.COMM_WORLD.getRank() + " sleeping " + millis + " s");
             Thread.sleep(millis);
         }
         catch (InterruptedException e) {
