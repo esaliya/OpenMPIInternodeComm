@@ -148,8 +148,8 @@ public class MemMapIntranodeComm {
                     double originalValue = preX[i][j];
                     double writtenValue = mmapXWriteBytes.readDouble((i-procRowStartOffset)*targetDimension*Double.BYTES + j*Double.BYTES);
                     if (writtenValue != originalValue){
-                        System.out.println(
-                            "Rank " + worldProcRank + " testloopNeg2-(" + i + "," + j + ") originalValue " + originalValue + " writtenValue " + writtenValue);
+//                        System.out.println(
+//                            "Rank " + worldProcRank + " testloopNeg2-(" + i + "," + j + ") originalValue " + originalValue + " writtenValue " + writtenValue);
                     }
                 }
             }
@@ -167,11 +167,11 @@ public class MemMapIntranodeComm {
                                     * targetDimension * Double.BYTES
                                     + j * Double.BYTES);
                     if (originalValue != writtenValueAsReadByReader) {
-                        System.out.println(
-                            "Rank " + worldProcRank + " testloopNeg1-(" + i +
-                            "," + j + ") originalValue " + originalValue
-                            + " writtenValueAsReadByReader " +
-                            writtenValueAsReadByReader);
+//                        System.out.println(
+//                            "Rank " + worldProcRank + " testloopNeg1-(" + i +
+//                            "," + j + ") originalValue " + originalValue
+//                            + " writtenValueAsReadByReader " +
+//                            writtenValueAsReadByReader);
                     }
                 }
             }
@@ -184,8 +184,8 @@ public class MemMapIntranodeComm {
                     double writtenValue = reader.readDouble(i*targetDimension*Double.BYTES+j*Double.BYTES);
                     double originalValue = preX[mmapLeadRowOffset+i][j];
                     if (writtenValue != originalValue){
-                        System.out.println(
-                            "Rank " + worldProcRank + " testloop0-(" + i + "," + j + ") originalValue " + originalValue + " writtenValue " + writtenValue);
+//                        System.out.println(
+//                            "Rank " + worldProcRank + " testloop0-(" + i + "," + j + ") originalValue " + originalValue + " writtenValue " + writtenValue);
                     }
                 }
             }
@@ -214,8 +214,8 @@ public class MemMapIntranodeComm {
             for (int i = 0; i < result.length; ++i) {
                 for (int j = 0; j < targetDimension; ++j) {
                     if (preX[i][j] != result[i][j]) {
-                        System.out.println(
-                            "Rank " + worldProcRank + " testloop1-(" + i + "," + j + ") preX " + preX[i][j] + " result " + result[i][j]);
+//                        System.out.println(
+//                            "Rank " + worldProcRank + " testloop1-(" + i + "," + j + ") preX " + preX[i][j] + " result " + result[i][j]);
                     }
                 }
             }
@@ -226,8 +226,8 @@ public class MemMapIntranodeComm {
             for (int i = 0; i < result.length; ++i) {
                 for (int j = 0; j < targetDimension; ++j) {
                     if (preX[i][j] != result[i][j]) {
-                        System.out.println(
-                            "testloop-2(" + i + "," + j + ") preX " + preX[i][j] + " result " + result[i][j]);
+//                        System.out.println(
+//                            "testloop-2(" + i + "," + j + ") preX " + preX[i][j] + " result " + result[i][j]);
                     }
                 }
             }
@@ -242,6 +242,17 @@ public class MemMapIntranodeComm {
         double[][] array = new double[threadRowCount][targetDimension];
         for (int i = globalRowStartOffset; i < threadRowCount+globalRowStartOffset; ++i){
             System.arraycopy(preX[i], 0, array[i-globalRowStartOffset],0, targetDimension);
+        }
+        try {
+            final long millis = (long) (930 + (Math.random()));
+            System.out.println("Rank " + MPI.COMM_WORLD.getRank() + " sleeping " + millis + " s");
+            Thread.sleep(millis);
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        catch (MPIException e) {
+            e.printStackTrace();
         }
         return array;
     }
