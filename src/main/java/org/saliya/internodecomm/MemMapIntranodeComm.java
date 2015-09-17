@@ -254,9 +254,6 @@ public class MemMapIntranodeComm {
         catch (InterruptedException e) {
             e.printStackTrace();
         }
-        catch (MPIException e) {
-            e.printStackTrace();
-        }
         return array;
     }
 
