@@ -244,7 +244,7 @@ public class MemMapIntranodeComm {
             System.arraycopy(preX[i], 0, array[i-globalRowStartOffset],0, targetDimension);
         }
         try {
-            final long millis = (long) (930 + (Math.random()));
+            final long millis = (long) (930 + (Math.random()*100));
             System.out.println("Rank " + MPI.COMM_WORLD.getRank() + " sleeping " + millis + " s");
             Thread.sleep(millis);
         }
